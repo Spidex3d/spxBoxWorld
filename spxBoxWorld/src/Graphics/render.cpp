@@ -4,7 +4,7 @@
 #include <Graphics\mesh.h>
 #include <Scene\camera.h>
 #include <Helper\helpers.h>
-#include <glm/gtc/matrix_transform.hpp>
+#include <World\world.h>
 
 
 
@@ -19,9 +19,8 @@ Render::~Render()
 bool Render::Initialize()
 {
     Helpers helpers;
-     
 
-	glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 
     std::string vertexShaderPath =
         helpers.GetAssetPath("Shader/basic.vert");
@@ -33,12 +32,33 @@ bool Render::Initialize()
         vertexShaderPath,
         fragmentShaderPath
     );
-	    
-    m_testMesh = std::make_unique<Mesh>();
-    m_testMesh->CreateCube();
 
-	return true;
+    if (!m_shader || m_shader->ID() == 0)
+    {
+        return false;
+    }
+
+    // --------------------------------------------
+    // Cube Mesh
+    // --------------------------------------------
+    m_cubeMesh = std::make_unique<Mesh>();
+    m_cubeMesh->CreateCube();
+    // --------------------------------------------
+    // Plane Mesh
+    // --------------------------------------------
+     m_planeMesh = std::make_unique<Mesh>();
+     m_planeMesh->CreatePlane();
+
+    // --------------------------------------------
+    // World
+    // --------------------------------------------
+    m_world = std::make_unique<World>();
+    m_world->GenerateWorld(*m_shader, *m_cubeMesh, *m_planeMesh);
+   
+
+    return true;
 }
+
 void Render::RenderFrame(const Camera& camera)
 {
     glClearColor(0.12f, 0.15f, 0.18f, 1.0f);
@@ -48,52 +68,39 @@ void Render::RenderFrame(const Camera& camera)
     m_shader->Use();
 
 	// camera matrices
-    float aspect =
-        1280.0f / 720.0f;
-
-    glm::mat4 model = glm::mat4(1.0f);
+    float aspect = 1280.0f / 720.0f;
 
     glm::mat4 view = camera.GetViewMatrix();
 
     glm::mat4 projection = camera.GetProjectionMatrix(aspect);
 
-    m_shader->setMat4("model", model);
+
     m_shader->setMat4("view", view);
+
     m_shader->setMat4("projection", projection);
 
-    // ------------------------------------------------
-    // Temporary 10 x 10 block floor
-    // ------------------------------------------------
-    for (int z = 0; z < 10; ++z)
-    {
-        for (int x = 0; x < 10; ++x)
-        {
-            glm::mat4 model =
-                glm::mat4(1.0f);
+    // --------------------------------------------
+    // World
+    // --------------------------------------------
+   
+    m_world->Render(*m_shader, *m_cubeMesh, *m_planeMesh);
 
-            model = glm::translate(
-                model,
-                glm::vec3(
-                    static_cast<float>(x) - 5.0f,
-                    -1.0f,
-                    static_cast<float>(z) - 5.0f
-                )
-            );
-
-            model = glm::scale(model, glm::vec3(0.98f));
-
-            m_shader->setMat4("model", model);
-
-            m_testMesh->RenderCube();
-        }
-    }
-
-
-	// Render the cube
-	//m_testMesh->RenderCube();
+    
 }
+
 void Render::Shutdown()
 {
+    if (m_world)
+    {
+        m_world->DestroyWorld();
+        m_world.reset();
+    }
+
+    if (m_cubeMesh)
+    {
+        m_cubeMesh->Destroy();
+        m_cubeMesh.reset();
+    }
     
     m_shader.reset();
 }

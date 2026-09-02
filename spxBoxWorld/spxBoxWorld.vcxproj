@@ -156,6 +156,7 @@
     <ClCompile Include="src\Graphics\shader.cpp" />
     <ClCompile Include="src\Helper\helpers.cpp" />
     <ClCompile Include="src\Scene\camera.cpp" />
+    <ClCompile Include="src\World\world.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Core\input.h" />
@@ -167,6 +168,8 @@
     <ClInclude Include="inc\Graphics\shader.h" />
     <ClInclude Include="inc\Helper\helpers.h" />
     <ClInclude Include="inc\Scene\camera.h" />
+    <ClInclude Include="inc\World\block.h" />
+    <ClInclude Include="inc\World\world.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shader\basic.frag" />
