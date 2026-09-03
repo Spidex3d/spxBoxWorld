@@ -5,6 +5,8 @@
 #include <Scene\camera.h>
 #include <Helper\helpers.h>
 #include <World\world.h>
+#include <Resources/mbxLoader.h>
+#include <iostream>
 
 
 
@@ -37,6 +39,35 @@ bool Render::Initialize()
     {
         return false;
     }
+    // ------------------------------------
+    MBXLoader loader;
+    MBXModel grassModel;
+
+    std::string grassPath =
+        helpers.GetResourcesPath("Models/Grass.mbx");
+
+    if (!loader.Load(
+        grassPath,
+        grassModel))
+    {
+        std::cout << "Failed to load Grass.mbx" << std::endl;
+
+        return false;
+    }
+
+    m_mbxMesh = std::make_unique<Mesh>();
+
+    if (!m_mbxMesh->CreateFromMBX(
+        grassModel))
+    {
+        std::cout
+            << "Failed to create MBX mesh"
+            << std::endl;
+
+        return false;
+    }
+
+
 
     // --------------------------------------------
     // Cube Mesh
@@ -78,6 +109,42 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
     m_shader->setMat4("view", view);
 
     m_shader->setMat4("projection", projection);
+
+    // --------------------------------------------
+  // Test MBX model
+  // --------------------------------------------
+    glm::mat4 model =
+        glm::mat4(1.0f);
+
+    model = glm::translate(
+        model,
+        glm::vec3(
+            0.0f,
+            4.0f,
+            0.0f
+        )
+    );
+
+    m_shader->setMat4(
+        "model",
+        model
+    );
+
+    m_shader->setVec3(
+        "blockColor",
+        glm::vec3(
+            0.2f,
+            0.7f,
+            0.2f
+        )
+    );
+
+    m_mbxMesh->RenderMBX();
+
+
+
+
+
 
     // --------------------------------------------
     // World

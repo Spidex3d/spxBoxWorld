@@ -13,4 +13,8 @@ public:
 
 	static fs::path FindAssetsRoot();
 
+	std::string GetResourcesPath(const std::string& relativePath);
+
+	static fs::path FindResourcesRoot();
+
 };

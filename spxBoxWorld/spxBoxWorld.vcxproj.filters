@@ -48,6 +48,9 @@
     <ClCompile Include="src\World\blockRaycast.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Resources\mbxLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Core\spxBoxWorld.h">
@@ -84,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\World\blockRaycast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\Resources\mbxLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

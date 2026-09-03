@@ -27,6 +27,8 @@ private:
 	// Add any private members or methods needed for rendering
 	std::unique_ptr<Shader> m_shader;
 
+	std::unique_ptr<Mesh> m_mbxMesh;
+
 	std::unique_ptr<Mesh> m_cubeMesh;
 
 	std::unique_ptr<Mesh> m_planeMesh;
