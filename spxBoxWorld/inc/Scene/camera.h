@@ -45,6 +45,11 @@ public:
         return Position;
     }
 
+    glm::vec3 GetFront() const
+    {
+        return Front;
+    }
+
 private:
 
     void UpdateCameraVectors();

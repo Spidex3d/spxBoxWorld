@@ -46,20 +46,20 @@ bool Render::Initialize()
     // --------------------------------------------
     // Plane Mesh
     // --------------------------------------------
-     m_planeMesh = std::make_unique<Mesh>();
-     m_planeMesh->CreatePlane();
+     //m_planeMesh = std::make_unique<Mesh>();
+    // m_planeMesh->CreatePlane();
 
     // --------------------------------------------
     // World
     // --------------------------------------------
     m_world = std::make_unique<World>();
-    m_world->GenerateWorld(*m_shader, *m_cubeMesh, *m_planeMesh);
+    m_world->GenerateWorld(*m_shader, *m_cubeMesh);
    
 
     return true;
 }
 
-void Render::RenderFrame(const Camera& camera)
+void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
 {
     glClearColor(0.12f, 0.15f, 0.18f, 1.0f);
 
@@ -83,9 +83,42 @@ void Render::RenderFrame(const Camera& camera)
     // World
     // --------------------------------------------
    
-    m_world->Render(*m_shader, *m_cubeMesh, *m_planeMesh);
+    m_world->Render(*m_shader, *m_cubeMesh);
 
-    
+    if (selectedBlock)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+
+        model = glm::translate(
+            model,
+            glm::vec3(
+                static_cast<float>(selectedBlock->x),
+                static_cast<float>(selectedBlock->y),
+                static_cast<float>(selectedBlock->z)
+            )
+        );
+
+        // Slightly larger so it does not z-fight with the block
+        model = glm::scale(
+            model,
+            glm::vec3(1.02f)
+        );
+
+        m_shader->setMat4("model", model);
+
+        m_shader->setVec3(
+            "blockColor",
+            glm::vec3(1.0f, 1.0f, 1.0f)
+        );
+
+        glLineWidth(2.0f);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+        m_cubeMesh->RenderCube();
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glLineWidth(1.0f);
+    }
 }
 
 void Render::Shutdown()

@@ -10,11 +10,11 @@ public:
 
 	
 	void CreateCube();
-	void CreatePlane();
+	//void CreatePlane();
 
 	
 	void RenderCube();
-	void RenderPlane();
+	//void RenderPlane();
 
 	void Destroy();
 

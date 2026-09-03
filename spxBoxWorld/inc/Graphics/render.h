@@ -5,6 +5,7 @@ class Shader;
 class Mesh;
 class Camera;
 class World;
+class Block;
 
 class Render
 {
@@ -12,12 +13,17 @@ class Render
 		Render();
 		~Render();
 		bool Initialize();
-		void RenderFrame(const Camera& camera);
+		void RenderFrame(const Camera& camera, const Block* selectedBlock);
 		void Shutdown();
 
 
+		World* GetWorld()
+		{
+			return m_world.get();
+		}
+
 private:
-	//std::unique_ptr<Camera> m_camera;
+	
 	// Add any private members or methods needed for rendering
 	std::unique_ptr<Shader> m_shader;
 
@@ -27,5 +33,5 @@ private:
 
 	std::unique_ptr<World> m_world;
 
-	//std::unique_ptr<Mesh> m_testMesh;
+	
 };

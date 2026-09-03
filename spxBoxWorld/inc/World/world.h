@@ -12,12 +12,23 @@ public:
     World();
     ~World();
 
-    void GenerateWorld(Shader& shader, Mesh& cubeMesh, Mesh& planeMesh);
+    Block* GetBlock(int x, int y, int z);
 
-    void Render(Shader& shader, Mesh& cubeMesh, Mesh& planeMesh);
+    bool AddBlock(BlockType type, int x, int y, int z);
+
+    bool RemoveBlock(int x, int y, int z);
+
+
+    void GenerateWorld(Shader& shader, Mesh& cubeMesh);
+
+    void Render(Shader& shader, Mesh& cubeMesh);
 
     void DestroyWorld();
+
+    
 private:
+	bool IsBlockAt(int x, int y, int z) const;
 
     std::vector<Block> m_blocks;
+    
 };
