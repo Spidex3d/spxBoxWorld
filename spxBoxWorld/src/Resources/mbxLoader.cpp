@@ -17,9 +17,7 @@ static std::string Trim(const std::string& str)
     return str.substr(first, last - first + 1);
 }
 
-bool MBXLoader::Load(
-    const std::string& filePath,
-    MBXModel& outModel)
+bool MBXLoader::Load(const std::string& filePath, MBXModel& outModel)
 {
     std::ifstream file(filePath);
 

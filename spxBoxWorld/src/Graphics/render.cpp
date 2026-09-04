@@ -40,26 +40,34 @@ bool Render::Initialize()
     {
         return false;
     }
-    // ------------------------------------
+    // --------------------------------------------
+    // Load Grass MBX
+    // --------------------------------------------
+
     MBXLoader loader;
-    MBXModel grassModel;
 
-    std::string grassPath =
-        helpers.GetResourcesPath("Models/Grass.mbx");
+    m_grassModel =
+        std::make_unique<MBXModel>();
 
-    if (!loader.Load(
-        grassPath,
-        grassModel))
+    std::string grassPath = helpers.GetResourcesPath("Models/Grass.mbx");
+
+    if (!loader.Load(grassPath, *m_grassModel))
     {
-        std::cout << "Failed to load Grass.mbx" << std::endl;
+        std::cout
+            << "Failed to load Grass.mbx"
+            << std::endl;
 
         return false;
     }
 
+
+    // --------------------------------------------
+    // Create MBX mesh
+    // --------------------------------------------
     m_mbxMesh = std::make_unique<Mesh>();
 
     if (!m_mbxMesh->CreateFromMBX(
-        grassModel))
+        *m_grassModel))
     {
         std::cout
             << "Failed to create MBX mesh"
@@ -67,6 +75,7 @@ bool Render::Initialize()
 
         return false;
     }
+
 
 	// test material color
     m_testTexture = std::make_unique<Texture>();
@@ -269,6 +278,7 @@ void Render::Shutdown()
         m_mbxMesh.reset();
     }
 
+    m_grassModel.reset();
     m_testTexture.reset();
     m_shader.reset();
 }

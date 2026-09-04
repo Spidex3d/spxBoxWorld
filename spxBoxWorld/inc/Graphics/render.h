@@ -8,6 +8,8 @@ class World;
 class Block;
 class Texture;
 
+class MBXModel;
+
 class Render
 {
 	public:
@@ -36,6 +38,8 @@ private:
 
 	std::unique_ptr<World> m_world;
 
+	// Keep loaded MBX data
+	std::unique_ptr<MBXModel> m_grassModel; 
 	// temporary test texture
 	std::unique_ptr<Texture> m_testTexture;
 };
