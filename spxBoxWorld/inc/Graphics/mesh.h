@@ -28,10 +28,6 @@ private:
 
 	unsigned int m_mbxIndexCount = 0;
 
-
-
-
-
 	GLuint m_cubeVAO = 0;
 	GLuint m_cubeVBO = 0;
 
