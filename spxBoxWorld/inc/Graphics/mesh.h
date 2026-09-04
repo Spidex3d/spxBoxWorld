@@ -3,6 +3,13 @@
 
 class MBXModel;
 
+struct MBXMaterialRange
+{
+	int materialIndex = 0;
+	unsigned int startIndex = 0;
+	unsigned int indexCount = 0;
+};
+
 class Mesh
 {
 public:
@@ -17,6 +24,8 @@ public:
 	
 	bool CreateFromMBX(const MBXModel& model);
 	void RenderMBX();
+
+	void RenderMBXRange(unsigned int startIndex, unsigned int indexCount);
 
 	void Destroy();
 

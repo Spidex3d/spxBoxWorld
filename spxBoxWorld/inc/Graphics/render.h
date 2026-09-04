@@ -34,12 +34,12 @@ private:
 
 	std::unique_ptr<Mesh> m_cubeMesh;
 
-	std::unique_ptr<Mesh> m_planeMesh;
-
 	std::unique_ptr<World> m_world;
 
 	// Keep loaded MBX data
 	std::unique_ptr<MBXModel> m_grassModel; 
-	// temporary test texture
-	std::unique_ptr<Texture> m_testTexture;
+	
+	// Textures for the top and side of blocks
+	std::unique_ptr<Texture> m_topTexture;
+	std::unique_ptr<Texture> m_sideTexture;
 };

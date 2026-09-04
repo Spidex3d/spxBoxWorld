@@ -60,6 +60,28 @@ bool Render::Initialize()
         return false;
     }
 
+    // --------------------------------------------
+// Debug: show triangle material assignments
+// --------------------------------------------
+    std::cout << std::endl;
+    std::cout << "Triangle material assignments:" << std::endl;
+
+    for (size_t i = 0;
+        i < m_grassModel->triangles.size();
+        ++i)
+    {
+        const MBXTriangle& triangle =
+            m_grassModel->triangles[i];
+
+        std::cout
+            << "Triangle "
+            << i
+            << " -> Material "
+            << triangle.materialIndex
+            << std::endl;
+    }
+
+    std::cout << std::endl;
 
     // --------------------------------------------
     // Create MBX mesh
@@ -69,44 +91,62 @@ bool Render::Initialize()
     if (!m_mbxMesh->CreateFromMBX(
         *m_grassModel))
     {
-        std::cout
-            << "Failed to create MBX mesh"
-            << std::endl;
+        std::cout << "Failed to create MBX mesh" << std::endl;
 
         return false;
     }
+	
 
+	// top and side textures for blocks
+    m_topTexture = std::make_unique<Texture>();
+    m_sideTexture = std::make_unique<Texture>();
 
-	// test material color
-    m_testTexture = std::make_unique<Texture>();
-
-
+	
     // --------------------------------------------
     // Cube Mesh
     // --------------------------------------------
     m_cubeMesh = std::make_unique<Mesh>();
     m_cubeMesh->CreateCube();
-    // --------------------------------------------
-    // Plane Mesh
-    // --------------------------------------------
-     //m_planeMesh = std::make_unique<Mesh>();
-    // m_planeMesh->CreatePlane();
-
+    
     // --------------------------------------------
     // World
     // --------------------------------------------
     m_world = std::make_unique<World>();
     m_world->GenerateWorld(*m_shader, *m_cubeMesh);
 
-	// test texture
-    std::string texturePath =
-        helpers.GetResourcesPath("Models/dead-leaves-sparse-on-grass.jpg");
+    // --------------------------------------------
+    // Texture from MBX material
+    // --------------------------------------------
+    if (m_grassModel->materials.size() <= 1)
+    {
+        std::cout
+            << "Grass.mbx does not contain material 1"
+            << std::endl;
 
-    if (!m_testTexture->LoadFromFile(texturePath))
+        return false;
+    }
+
+    std::string topTexturePath =
+        helpers.GetResourcesPath(
+            "Models/" +
+            m_grassModel->materials[1].baseColorMap
+        );
+
+    if (!m_topTexture->LoadFromFile(topTexturePath))
     {
         return false;
     }
-   
+
+    std::string sideTexturePath =
+        helpers.GetResourcesPath(
+            "Models/" +
+            m_grassModel->materials[2].baseColorMap
+        );
+
+    if (!m_sideTexture->LoadFromFile(sideTexturePath))
+    {
+        return false;
+    }
 
     return true;
 }
@@ -132,8 +172,8 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
     m_shader->setMat4("projection", projection);
 
     // --------------------------------------------
-  // Test MBX model
-  // --------------------------------------------
+    // Test MBX model
+    // --------------------------------------------
     
     glm::mat4 model = glm::mat4(1.0f);
 
@@ -151,65 +191,37 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
         model
     );
 
+   
     // --------------------------------------------
-    // Use the MBX texture
+    // Sides - Material 2
     // --------------------------------------------
-    m_shader->SetUniformInt(
-        "useTexture",
-        1
-    );
+    m_shader->SetUniformInt("useTexture", 1);
 
-    m_testTexture->Bind(0);
+    m_sideTexture->Bind(0);
 
-    m_shader->SetUniformInt(
-        "baseTexture",
-        0
-    );
+    m_shader->SetUniformInt("baseTexture", 0);
 
-    // Draw textured MBX
-    m_mbxMesh->RenderMBX();
+    m_mbxMesh->RenderMBXRange(0, 24);
 
 
     // --------------------------------------------
-    // Return to colour rendering
+    // Top - Material 1
     // --------------------------------------------
-    m_shader->SetUniformInt(
-        "useTexture",
-        0
-    );
-  
-  /*glm::mat4 model =
-        glm::mat4(1.0f);
+    m_topTexture->Bind(0);
 
-    model = glm::translate(
-        model,
-        glm::vec3(
-            0.0f,
-            4.0f,
-            0.0f
-        )
-    );
-
-    m_shader->setMat4(
-        "model",
-        model
-    );
-
-    m_shader->setVec3(
-        "blockColor",
-        glm::vec3(
-            0.2f,
-            0.7f,
-            0.2f
-        )
-    );
-
-    m_mbxMesh->RenderMBX();
+    m_mbxMesh->RenderMBXRange(24, 6);
 
 
+    // --------------------------------------------
+    // Bottom - Material 0
+    // --------------------------------------------
+    m_shader->SetUniformInt("useTexture", 0);
 
-    m_shader->SetUniformInt("useTexture", 0);*/
+    m_shader->setVec3("blockColor", glm::vec3(m_grassModel->materials[0].baseColor));
 
+    m_mbxMesh->RenderMBXRange(30, 6);
+
+    
     // --------------------------------------------
     // World
     // --------------------------------------------
@@ -267,11 +279,6 @@ void Render::Shutdown()
     }
     
 
-    if (m_testTexture)
-    {
-        m_testTexture.reset();
-    }
-
     if (m_mbxMesh)
     {
         m_mbxMesh->Destroy();
@@ -279,6 +286,6 @@ void Render::Shutdown()
     }
 
     m_grassModel.reset();
-    m_testTexture.reset();
+   
     m_shader.reset();
 }
