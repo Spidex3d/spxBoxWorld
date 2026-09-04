@@ -154,6 +154,8 @@
     <ClCompile Include="src\Graphics\mesh.cpp" />
     <ClCompile Include="src\Graphics\render.cpp" />
     <ClCompile Include="src\Graphics\shader.cpp" />
+    <ClCompile Include="src\Graphics\stb_image.cpp" />
+    <ClCompile Include="src\Graphics\texture.cpp" />
     <ClCompile Include="src\Helper\helpers.cpp" />
     <ClCompile Include="src\Resources\mbxLoader.cpp" />
     <ClCompile Include="src\Scene\camera.cpp" />
@@ -168,6 +170,7 @@
     <ClInclude Include="inc\Graphics\mesh.h" />
     <ClInclude Include="inc\Graphics\render.h" />
     <ClInclude Include="inc\Graphics\shader.h" />
+    <ClInclude Include="inc\Graphics\texture.h" />
     <ClInclude Include="inc\Helper\helpers.h" />
     <ClInclude Include="inc\Resources\mbxLoader.h" />
     <ClInclude Include="inc\Scene\camera.h" />

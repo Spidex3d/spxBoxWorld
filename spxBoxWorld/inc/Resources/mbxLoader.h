@@ -15,6 +15,8 @@ struct MBXVertex
 
 struct MBXMaterial
 {
+    int id = 0;
+
     std::string name;
 
     glm::vec4 baseColor = glm::vec4(1.0f);
@@ -27,6 +29,7 @@ struct MBXMaterial
     float emissionStrength = 0.0f;
 
     std::string baseColorMap;
+
 };
 
 

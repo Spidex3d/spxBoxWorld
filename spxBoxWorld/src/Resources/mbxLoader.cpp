@@ -5,6 +5,18 @@
 #include <iostream>
 
 
+static std::string Trim(const std::string& str)
+{
+    const size_t first = str.find_first_not_of(" \t\r\n");
+
+    if (first == std::string::npos)
+        return "";
+
+    const size_t last = str.find_last_not_of(" \t\r\n");
+
+    return str.substr(first, last - first + 1);
+}
+
 bool MBXLoader::Load(
     const std::string& filePath,
     MBXModel& outModel)
@@ -158,16 +170,185 @@ bool MBXLoader::Load(
 
             ss >> materialMarker;
 
+			// go through the faces and check if there is a material index specified I think
+
             if (materialMarker == "m")
             {
                 ss >> triangle.materialIndex;
             }
 
 
-            outModel.triangles.push_back(
-                triangle
-            );
+            outModel.triangles.push_back(triangle);
         }
+
+		// ------------------------------------------------
+		// Material
+		// ------------------------------------------------
+
+        else if (command == "material")
+        {
+            if (outModel.materials.size() >= 8)
+            {
+                std::cout
+                    << "Warning: Maximum number of materials reached."
+                    << std::endl;
+
+                continue;
+            }
+
+            MBXMaterial material;
+
+            // Example:
+            // material 1
+            ss >> material.id;
+
+
+            // --------------------------------------------
+            // Read material block until "endmaterial"
+            // --------------------------------------------
+            while (std::getline(file, line))
+            {
+                line = Trim(line);
+
+                if (line.empty())
+                    continue;
+
+                std::stringstream materialStream(line);
+
+                std::string materialCommand;
+
+                materialStream >> materialCommand;
+
+
+                // ----------------------------------------
+                // End of material
+                // ----------------------------------------
+                if (materialCommand == "endmaterial")
+                {
+                    break;
+                }
+
+
+                // ----------------------------------------
+                // Name
+                // ----------------------------------------
+                if (materialCommand == "name")
+                {
+                    std::string value;
+
+                    std::getline(
+                        materialStream,
+                        value
+                    );
+
+                    material.name =
+                        Trim(value);
+                }
+
+
+                // ----------------------------------------
+                // Base colour
+                // ----------------------------------------
+                else if (materialCommand == "base_color")
+                {
+                    materialStream
+                        >> material.baseColor.r
+                        >> material.baseColor.g
+                        >> material.baseColor.b
+                        >> material.baseColor.a;
+                }
+
+
+                // ----------------------------------------
+                // Metallic
+                // ----------------------------------------
+                else if (materialCommand == "metallic")
+                {
+                    materialStream
+                        >> material.metallic;
+                }
+
+
+                // ----------------------------------------
+                // Roughness
+                // ----------------------------------------
+                else if (materialCommand == "roughness")
+                {
+                    materialStream
+                        >> material.roughness;
+                }
+
+
+                // ----------------------------------------
+                // Alpha
+                // ----------------------------------------
+                else if (materialCommand == "alpha")
+                {
+                    materialStream
+                        >> material.alpha;
+                }
+
+
+                // ----------------------------------------
+                // Emission colour
+                // ----------------------------------------
+                else if (materialCommand == "emission_color")
+                {
+                    materialStream
+                        >> material.emissionColor.r
+                        >> material.emissionColor.g
+                        >> material.emissionColor.b;
+                }
+
+
+                // ----------------------------------------
+                // Emission strength
+                // ----------------------------------------
+                else if (materialCommand == "emission_strength")
+                {
+                    materialStream
+                        >> material.emissionStrength;
+                }
+
+
+                // ----------------------------------------
+                // Base colour texture
+                // ----------------------------------------
+                else if (materialCommand == "base_color_map")
+                {
+                    std::string value;
+
+                    std::getline(
+                        materialStream,
+                        value
+                    );
+
+                    material.baseColorMap =
+                        Trim(value);
+                }
+            }
+
+
+            outModel.materials.push_back(
+                material
+            );
+
+
+            std::cout
+                << "Material "
+                << material.id
+                << ": "
+                << material.name
+                << std::endl;
+
+            if (!material.baseColorMap.empty())
+            {
+                std::cout
+                    << "  Texture: "
+                    << material.baseColorMap
+                    << std::endl;
+            }
+            }
     }
 
 
@@ -218,6 +399,38 @@ bool MBXLoader::Load(
         << outModel.triangles.size()
         << std::endl;
 
+
+    std::cout
+        << "Materials: "
+        << outModel.materials.size()
+        << std::endl;
+
+    for (const MBXMaterial& material :
+        outModel.materials)
+    {
+        std::cout
+            << "Material "
+            << material.id
+            << ": "
+            << material.name
+            << std::endl;
+
+        std::cout
+            << "  Base Color: "
+            << material.baseColor.r << ", "
+            << material.baseColor.g << ", "
+            << material.baseColor.b << ", "
+            << material.baseColor.a
+            << std::endl;
+
+        if (!material.baseColorMap.empty())
+        {
+            std::cout
+                << "  Texture: "
+                << material.baseColorMap
+                << std::endl;
+        }
+    }
 
     return true;
 }

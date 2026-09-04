@@ -6,6 +6,7 @@
 #include <Helper\helpers.h>
 #include <World\world.h>
 #include <Resources/mbxLoader.h>
+#include <Graphics\texture.h>
 #include <iostream>
 
 
@@ -67,6 +68,8 @@ bool Render::Initialize()
         return false;
     }
 
+	// test material color
+    m_testTexture = std::make_unique<Texture>();
 
 
     // --------------------------------------------
@@ -85,6 +88,15 @@ bool Render::Initialize()
     // --------------------------------------------
     m_world = std::make_unique<World>();
     m_world->GenerateWorld(*m_shader, *m_cubeMesh);
+
+	// test texture
+    std::string texturePath =
+        helpers.GetResourcesPath("Models/dead-leaves-sparse-on-grass.jpg");
+
+    if (!m_testTexture->LoadFromFile(texturePath))
+    {
+        return false;
+    }
    
 
     return true;
@@ -113,7 +125,51 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
     // --------------------------------------------
   // Test MBX model
   // --------------------------------------------
-    glm::mat4 model =
+    
+    glm::mat4 model = glm::mat4(1.0f);
+
+    model = glm::translate(
+        model,
+        glm::vec3(
+            0.0f,
+            4.0f,
+            0.0f
+        )
+    );
+
+    m_shader->setMat4(
+        "model",
+        model
+    );
+
+    // --------------------------------------------
+    // Use the MBX texture
+    // --------------------------------------------
+    m_shader->SetUniformInt(
+        "useTexture",
+        1
+    );
+
+    m_testTexture->Bind(0);
+
+    m_shader->SetUniformInt(
+        "baseTexture",
+        0
+    );
+
+    // Draw textured MBX
+    m_mbxMesh->RenderMBX();
+
+
+    // --------------------------------------------
+    // Return to colour rendering
+    // --------------------------------------------
+    m_shader->SetUniformInt(
+        "useTexture",
+        0
+    );
+  
+  /*glm::mat4 model =
         glm::mat4(1.0f);
 
     model = glm::translate(
@@ -143,8 +199,7 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
 
 
 
-
-
+    m_shader->SetUniformInt("useTexture", 0);*/
 
     // --------------------------------------------
     // World
@@ -202,5 +257,18 @@ void Render::Shutdown()
         m_cubeMesh.reset();
     }
     
+
+    if (m_testTexture)
+    {
+        m_testTexture.reset();
+    }
+
+    if (m_mbxMesh)
+    {
+        m_mbxMesh->Destroy();
+        m_mbxMesh.reset();
+    }
+
+    m_testTexture.reset();
     m_shader.reset();
 }

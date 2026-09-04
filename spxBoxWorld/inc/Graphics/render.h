@@ -6,6 +6,7 @@ class Mesh;
 class Camera;
 class World;
 class Block;
+class Texture;
 
 class Render
 {
@@ -35,5 +36,6 @@ private:
 
 	std::unique_ptr<World> m_world;
 
-	
+	// temporary test texture
+	std::unique_ptr<Texture> m_testTexture;
 };
