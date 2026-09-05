@@ -1,7 +1,9 @@
 #include "World/world.h"
 #include <glm/gtc/matrix_transform.hpp>
-#include <Graphics\shader.h>
-#include <Graphics\mesh.h>
+#include <Graphics/shader.h>
+#include <Graphics/mesh.h>
+#include <Graphics/texture.h>
+#include <Resources/mbxLoader.h>
 
 World::World() {}
 
@@ -127,7 +129,6 @@ void World::GenerateWorld(Shader& shader, Mesh& cubeMesh)
 
 }
 
-//void World::Render(Shader& shader, Mesh& cubeMesh, Mesh& planeMesh)
 void World::Render(Shader& shader, Mesh& cubeMesh)
 {
     

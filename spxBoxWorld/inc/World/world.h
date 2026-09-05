@@ -5,6 +5,9 @@
 
 class Shader;
 class Mesh;
+class Texture;
+struct MBXModel;
+
 
 class World
 {
@@ -18,10 +21,20 @@ public:
 
     bool RemoveBlock(int x, int y, int z);
 
+    
+
+    const std::vector<Block>& GetBlocks() const
+    {
+        return m_blocks;
+    }
+
 
     void GenerateWorld(Shader& shader, Mesh& cubeMesh);
 
     void Render(Shader& shader, Mesh& cubeMesh);
+   
+
+
 
     void DestroyWorld();
 

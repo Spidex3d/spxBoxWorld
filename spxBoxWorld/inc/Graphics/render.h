@@ -1,5 +1,7 @@
 #pragma once
 #include <memory>
+#include <glm/glm.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
 
 class Shader;
 class Mesh;
@@ -17,6 +19,9 @@ class Render
 		~Render();
 		bool Initialize();
 		void RenderFrame(const Camera& camera, const Block* selectedBlock);
+
+		void RenderGrassBlock(const glm::mat4& model);
+
 		void Shutdown();
 
 

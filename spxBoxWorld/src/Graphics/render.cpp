@@ -117,31 +117,23 @@ bool Render::Initialize()
     // --------------------------------------------
     // Texture from MBX material
     // --------------------------------------------
-    if (m_grassModel->materials.size() <= 1)
+    if (m_grassModel->materials.size() < 3)
     {
-        std::cout
-            << "Grass.mbx does not contain material 1"
-            << std::endl;
+        std::cout << "Grass.mbx does not contain material 3" << std::endl;
 
         return false;
     }
-
-    std::string topTexturePath =
-        helpers.GetResourcesPath(
-            "Models/" +
-            m_grassModel->materials[1].baseColorMap
-        );
+	// texture for the top of the grass block (material 1)
+    std::string topTexturePath = helpers.GetResourcesPath(
+            "Models/" + m_grassModel->materials[1].baseColorMap);
 
     if (!m_topTexture->LoadFromFile(topTexturePath))
     {
         return false;
     }
-
-    std::string sideTexturePath =
-        helpers.GetResourcesPath(
-            "Models/" +
-            m_grassModel->materials[2].baseColorMap
-        );
+	// texture for the sides of the grass block (material 2)
+    std::string sideTexturePath = helpers.GetResourcesPath(
+            "Models/" + m_grassModel->materials[2].baseColorMap);
 
     if (!m_sideTexture->LoadFromFile(sideTexturePath))
     {
@@ -172,61 +164,63 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
     m_shader->setMat4("projection", projection);
 
     // --------------------------------------------
-    // Test MBX model
-    // --------------------------------------------
-    
-    glm::mat4 model = glm::mat4(1.0f);
-
-    model = glm::translate(
-        model,
-        glm::vec3(
-            0.0f,
-            4.0f,
-            0.0f
-        )
-    );
-
-    m_shader->setMat4(
-        "model",
-        model
-    );
-
-   
-    // --------------------------------------------
-    // Sides - Material 2
-    // --------------------------------------------
-    m_shader->SetUniformInt("useTexture", 1);
-
-    m_sideTexture->Bind(0);
-
-    m_shader->SetUniformInt("baseTexture", 0);
-
-    m_mbxMesh->RenderMBXRange(0, 24);
-
-
-    // --------------------------------------------
-    // Top - Material 1
-    // --------------------------------------------
-    m_topTexture->Bind(0);
-
-    m_mbxMesh->RenderMBXRange(24, 6);
-
-
-    // --------------------------------------------
-    // Bottom - Material 0
-    // --------------------------------------------
-    m_shader->SetUniformInt("useTexture", 0);
-
-    m_shader->setVec3("blockColor", glm::vec3(m_grassModel->materials[0].baseColor));
-
-    m_mbxMesh->RenderMBXRange(30, 6);
-
-    
-    // --------------------------------------------
     // World
     // --------------------------------------------
    
-    m_world->Render(*m_shader, *m_cubeMesh);
+    const auto& blocks = m_world->GetBlocks();
+
+    for (const Block& block : blocks)
+    {
+
+        if (!block.isActive)
+            continue;
+
+        glm::mat4 blockModel =
+            glm::mat4(1.0f);
+
+        blockModel = glm::translate(
+            blockModel,
+            glm::vec3(
+                static_cast<float>(block.x),
+                static_cast<float>(block.y),
+                static_cast<float>(block.z)
+            )
+        );
+
+
+        if (block.type == BlockType::Grass)
+        {
+            RenderGrassBlock(blockModel);
+            continue;
+        }
+
+
+        BlockDefinition definition =
+            GetBlockDefinition(block.type);
+
+        m_shader->setMat4(
+            "model",
+            blockModel
+        );
+
+        m_shader->SetUniformInt(
+            "useTexture",
+            0
+        );
+
+        m_shader->setVec3(
+            "blockColor",
+            definition.color
+        );
+
+        m_cubeMesh->RenderCube();
+
+    }
+
+
+	// --------------------------------------------
+	// Highlight selected block
+	// --------------------------------------------
 
     if (selectedBlock)
     {
@@ -264,6 +258,64 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
     }
 }
 
+void Render::RenderGrassBlock(const glm::mat4& model)
+{
+    m_shader->setMat4("model", model);
+
+
+    // --------------------------------------------
+    // Sides - Material 2
+    // --------------------------------------------
+    m_shader->SetUniformInt(
+        "useTexture",
+        1
+    );
+
+    m_sideTexture->Bind(0);
+
+    m_shader->SetUniformInt(
+        "baseTexture",
+        0
+    );
+
+    m_mbxMesh->RenderMBXRange(
+        0,
+        24
+    );
+
+
+    // --------------------------------------------
+    // Top - Material 1
+    // --------------------------------------------
+    m_topTexture->Bind(0);
+
+    m_mbxMesh->RenderMBXRange(
+        24,
+        6
+    );
+
+
+    // --------------------------------------------
+    // Bottom - Material 0
+    // --------------------------------------------
+    m_shader->SetUniformInt(
+        "useTexture",
+        0
+    );
+
+    m_shader->setVec3(
+        "blockColor",
+        glm::vec3(
+            m_grassModel->materials[0].baseColor
+        )
+    );
+
+    m_mbxMesh->RenderMBXRange(
+        30,
+        6
+    );
+}
+
 void Render::Shutdown()
 {
     if (m_world)
@@ -285,7 +337,9 @@ void Render::Shutdown()
         m_mbxMesh.reset();
     }
 
+    m_topTexture.reset();
+    m_sideTexture.reset();
+
     m_grassModel.reset();
-   
     m_shader.reset();
 }
