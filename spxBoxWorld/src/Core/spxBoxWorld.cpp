@@ -6,6 +6,7 @@
 #include <Graphics/render.h>
 #include <Scene/camera.h>
 #include <iostream>
+#include <algorithm>
 #include <boxLog.h>
 
 #include <World/blockRaycast.h>
@@ -136,32 +137,141 @@ void spxBoxWorld::Run()
             ) == GLFW_PRESS;
 
         if (leftMouse &&
-            !lastLeftMouse &&
-            hit.hit &&
-            hit.block)
+            !lastLeftMouse)
         {
-            m_renderer->GetWorld()->RemoveBlock(
-                hit.block->x,
-                hit.block->y,
-                hit.block->z
-            );
+            // ---------------------------------------------
+            // Remove normal world block
+            // ---------------------------------------------
+            if (m_buildMode == BuildMode::Block)
+            {
+                if (hit.hit && hit.block)
+                {
+                    m_renderer->GetWorld()->RemoveBlock(
+                        hit.block->x,
+                        hit.block->y,
+                        hit.block->z
+                    );
 
-            // Selected pointer now refers to a block
-            // that has just been made inactive.
-            selectedBlock = nullptr;
+                    selectedBlock = nullptr;
+                }
+            }
+
+            // ---------------------------------------------
+            // Remove placed brick
+            // ---------------------------------------------
+
+            else if (m_buildMode == BuildMode::Brick)
+            {
+                if (hit.hit && hit.block)
+                {
+                    // Work out which brick slot the mouse is over
+                    float localX =
+                        hit.hitPosition.x -
+                        static_cast<float>(hit.block->x);
+
+                    float edgeX =
+                        localX + 0.5f;
+
+                    int slotIndex =
+                        static_cast<int>(
+                            edgeX / 0.25f
+                            );
+
+                    slotIndex =
+                        std::clamp(
+                            slotIndex,
+                            0,
+                            3
+                        );
+
+                    // Calculate the exact brick position for that slot
+                    glm::vec3 targetBrickPos;
+
+                    targetBrickPos.x =
+                        static_cast<float>(hit.block->x)
+                        - 0.5f
+                        + 0.125f
+                        + (slotIndex * 0.25f);
+
+                    targetBrickPos.y =
+                        static_cast<float>(hit.block->y)
+                        + 0.5f
+                        + 0.0625f;
+
+                    targetBrickPos.z =
+                        static_cast<float>(hit.block->z)
+                        + 0.5f
+                        - 0.0625f;
+
+                    // Find a brick stored at that exact slot
+                    for (int i = 0;
+                        i < static_cast<int>(placedBricks.size());
+                        ++i)
+                    {
+                        if (glm::distance(
+                            placedBricks[i].position,
+                            targetBrickPos
+                        ) < 0.001f)
+                        {
+                            placedBricks.erase(
+                                placedBricks.begin() + i
+                            );
+
+                            std::cout
+                                << "Removed brick from slot "
+                                << slotIndex
+                                << std::endl;
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+
+            //else if (m_buildMode == BuildMode::Brick)
+            //{
+            //    if (hit.hit)
+            //    {
+            //        float closestDistance = 0.20f;
+            //        int closestBrick = -1;
+
+            //        for (int i = 0;
+            //            i < static_cast<int>(placedBricks.size());
+            //            ++i)
+            //        {
+            //            float distance =
+            //                glm::distance(
+            //                    placedBricks[i].position,
+            //                    hit.hitPosition
+            //                );
+
+            //            if (distance < closestDistance)
+            //            {
+            //                closestDistance = distance;
+            //                closestBrick = i;
+            //            }
+            //        }
+
+            //        if (closestBrick != -1)
+            //        {
+            //            placedBricks.erase(
+            //                placedBricks.begin() +
+            //                closestBrick
+            //            );
+
+            //            std::cout << "Removed brick" << std::endl;
+            //        }
+            //    }
+            //}
         }
-
+         
         lastLeftMouse = leftMouse;
-
-
-        // ------------------------------------------------
-        // Add block - Right Mouse
-        // ------------------------------------------------
-        
 
         // ------------------------------------------------
         // Add block / brick - Right Mouse
         // ------------------------------------------------
+        
         // GLFW_MOUSE_BUTTON_RIGHT
         bool rightMouse =
             glfwGetMouseButton(
@@ -209,53 +319,88 @@ void spxBoxWorld::Run()
             // ------------------------------------------------
             else if (m_buildMode == BuildMode::Brick)
             {
+                
 
-                    /*int first brick = slot 0
-                    int second brick = slot 1
-                    int third brick = slot 2
-                    int fourth brick = slot 3*/
+                // Mouse hit position relative to centre of ground block
+                float localX = hit.hitPosition.x - static_cast<float>(hit.block->x);
 
-                constexpr float brickDepth = 0.125f;
-                constexpr float edgeLength = 0.5f;
+                // Convert block space:
+                //
+                // -0.5 ---------------- +0.5
+                //
+                // into:
+                //
+                //  0.0 ---------------- 1.0
+
+                float edgeX = localX + 0.5f;
+
+                // Four slots across one block
+                int slotIndex =
+                    static_cast<int>(
+                        edgeX / 0.25f
+                        );
+
+                // Keep it safely between 0 and 3
+                slotIndex = std::clamp(slotIndex,
+                        0,
+                        3
+                    );
 
                 glm::vec3 brickPos;
 
-               // brickPos.x = static_cast<float>(hit.block->x) + -edgeLength + brickDepth;
                 brickPos.x =
                     static_cast<float>(hit.block->x)
                     - 0.5f
                     + 0.125f
-                    + 0.25f;
+                    + (slotIndex * 0.25f);
 
                 brickPos.y =
                     static_cast<float>(hit.block->y)
-                    + edgeLength
+                    + 0.5f
                     + 0.0625f;
 
                 brickPos.z =
                     static_cast<float>(hit.block->z)
-                    + 0.4375f;
-               
+                    + 0.5f
+                    - 0.0625f;
+
                 PlacedBrick newBrick;
 
                 newBrick.position = brickPos;
                 newBrick.rotationY = 0.0f;
                 newBrick.active = true;
 
-                placedBricks.push_back(newBrick);
+                bool occupied = false;
+
+                for (const PlacedBrick& brick : placedBricks)
+                {
+                    if (glm::distance(
+                        brick.position,
+                        brickPos) < 0.001f)
+                    {
+                        occupied = true;
+                        break;
+                    }
+                }
+
+                if (!occupied)
+                {
+                    placedBricks.push_back(newBrick);
+                }
 
                 std::cout
-                    << "Placed brick at: "
-                    << brickPos.x << ", "
-                    << brickPos.y << ", "
-                    << brickPos.z
+                    << "Hit X: "
+                    << hit.hitPosition.x
+                    << "  Block X: "
+                    << hit.block->x
+                    << "  Local X: "
+                    << localX
+                    << "  Slot: "
+                    << slotIndex
                     << std::endl;
-            }
-            
-            
-        }
 
-        
+            }
+        }
 
         lastRightMouse = rightMouse;
 
@@ -311,3 +456,40 @@ void spxBoxWorld::Shutdown()
 
     BOX_LOG_INFO("spxBoxWorld shutdown.");
 }
+
+
+
+
+//    glm::vec3 brickPos;
+
+               //   // brickPos.x = static_cast<float>(hit.block->x) + -edgeLength + brickDepth;
+               //    brickPos.x =
+               //        static_cast<float>(hit.block->x)
+               //        - 0.5f
+               //        + 0.125f
+               //        + 0.25f;
+
+               //    brickPos.y =
+               //        static_cast<float>(hit.block->y)
+               //        + edgeLength
+               //        + 0.0625f;
+
+               //    brickPos.z =
+               //        static_cast<float>(hit.block->z)
+               //        + 0.4375f;
+               //   
+               //    PlacedBrick newBrick;
+
+               //    newBrick.position = brickPos;
+               //    newBrick.rotationY = 0.0f;
+               //    newBrick.active = true;
+
+               //    placedBricks.push_back(newBrick);
+
+               //    std::cout
+               //        << "Placed brick at: "
+               //        << brickPos.x << ", "
+               //        << brickPos.y << ", "
+               //        << brickPos.z
+               //        << std::endl;
+               //}

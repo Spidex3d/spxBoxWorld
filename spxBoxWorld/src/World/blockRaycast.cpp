@@ -108,8 +108,9 @@ RaycastHit BlockRaycast::Cast(
                     previousCell - currentCell;
 
                 // This is where a new block should go
-                result.placePosition =
-                    previousCell;
+                result.placePosition = previousCell;
+
+                result.hitPosition = point;
 
                 result.hit = true;
 

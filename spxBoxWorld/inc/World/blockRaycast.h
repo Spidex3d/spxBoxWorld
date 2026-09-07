@@ -17,6 +17,8 @@ struct RaycastHit
     // Empty cell immediately before the selected block
     glm::ivec3 placePosition = glm::ivec3(0);
 
+    glm::vec3 hitPosition = glm::vec3(0.0f);
+
     bool hit = false;
 };
 
