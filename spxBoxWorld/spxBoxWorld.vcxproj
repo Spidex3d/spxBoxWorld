@@ -178,6 +178,8 @@
     <ClInclude Include="inc\Scene\camera.h" />
     <ClInclude Include="inc\World\block.h" />
     <ClInclude Include="inc\World\blockRaycast.h" />
+    <ClInclude Include="inc\World\buildMode.h" />
+    <ClInclude Include="inc\World\placeBricks.h" />
     <ClInclude Include="inc\World\world.h" />
   </ItemGroup>
   <ItemGroup>

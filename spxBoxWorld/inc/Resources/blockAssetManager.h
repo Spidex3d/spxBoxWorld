@@ -11,6 +11,12 @@ class MBXModel;
 class Mesh;
 enum class BlockType;   
 
+struct BlockMaterialRange
+{
+    unsigned int startIndex = 0;
+    unsigned int indexCount = 0;
+};
+
 struct BlockMaterial
 {
     int materialIndex = 0;
@@ -21,9 +27,13 @@ struct BlockMaterial
 
     bool useTexture = false;
 
-    unsigned int startIndex = 0;
-    unsigned int indexCount = 0;
+
+    std::vector<BlockMaterialRange> ranges;
+    /*unsigned int startIndex = 0;
+    unsigned int indexCount = 0;*/
 };
+
+
 
 struct BlockAsset
 {
@@ -42,6 +52,9 @@ public:
     bool LoadBlockAsset(BlockType type, const std::string& mbxFile);
 
     BlockAsset* GetBlockAsset(BlockType type);
+
+    
+
 
     void Shutdown();
 

@@ -61,6 +61,13 @@ bool MBXLoader::Load(const std::string& filePath, MBXModel& outModel)
             ss >> outModel.name;
         }
 
+        else if (command == "scale") {
+                        ss
+                >> outModel.scale.x
+                >> outModel.scale.y
+                >> outModel.scale.z;
+        }
+
 
         // ------------------------------------------------
         // Position
@@ -385,6 +392,12 @@ bool MBXLoader::Load(const std::string& filePath, MBXModel& outModel)
     std::cout
         << "Loaded MBX: "
         << outModel.name
+        << std::endl;
+
+    std::cout << "Scale: "
+        << outModel.scale.x << ", "
+        << outModel.scale.y << ", "
+        << outModel.scale.z
         << std::endl;
 
     std::cout

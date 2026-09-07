@@ -1,5 +1,7 @@
 #pragma once
 #include <memory>
+#include <vector>
+#include <World/buildMode.h>
 //#include <World/block.h>
 
 class Window;
@@ -25,5 +27,5 @@ private:
     std::unique_ptr<Render> m_renderer;
     std::unique_ptr<Camera> m_camera;
 
-    //BuildMode m_buildMode = BuildMode::Block;
+
 };

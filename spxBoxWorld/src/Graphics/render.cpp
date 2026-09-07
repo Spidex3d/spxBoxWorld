@@ -55,6 +55,17 @@ bool Render::Initialize()
         return false;
     }
 
+    if (!m_blockAssets->LoadBlockAsset(
+        BlockType::Brick,
+        "Models/Brick_full.mbx"))
+    {
+        std::cout
+            << "Failed to load Brick BlockAsset"
+            << std::endl;
+
+        return false;
+    }
+
     // --------------------------------------------
     // Test GetBlockAsset
     // --------------------------------------------
@@ -88,7 +99,7 @@ bool Render::Initialize()
     return true;
 }
 
-void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
+void Render::RenderFrame(Camera& camera, Block* selectedBlock, const std::vector<PlacedBrick>& placedBricks )
 {
     glClearColor(0.12f, 0.15f, 0.18f, 1.0f);
 
@@ -159,6 +170,88 @@ void Render::RenderFrame(const Camera& camera, const Block* selectedBlock)
 
         m_cubeMesh->RenderCube();
 
+    }
+    // -------------------------------------------
+	// test render a single brick at (0, 0, 0)
+    // -------------------------------------------
+    
+    BlockAsset* brickAsset =
+        m_blockAssets->GetBlockAsset(
+            BlockType::Brick
+        );
+
+    if (brickAsset)
+    {
+        for (const PlacedBrick& brick : placedBricks)
+        {
+            if (!brick.active)
+                continue;
+
+            glm::mat4 model =
+                glm::mat4(1.0f);
+
+            model = glm::translate(
+                model,
+                brick.position
+            );
+
+            model = glm::rotate(
+                model,
+                glm::radians(brick.rotationY),
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            );
+
+            model = glm::scale(
+                model,
+                brickAsset->model->scale
+            );
+
+            m_shader->setMat4(
+                "model",
+                model
+            );
+
+            for (const BlockMaterial& material :
+                brickAsset->materials)
+            {
+                if (material.useTexture &&
+                    material.texture)
+                {
+                    m_shader->SetUniformInt(
+                        "useTexture",
+                        1
+                    );
+
+                    material.texture->Bind(0);
+
+                    m_shader->SetUniformInt(
+                        "baseTexture",
+                        0
+                    );
+                }
+                else
+                {
+                    m_shader->SetUniformInt(
+                        "useTexture",
+                        0
+                    );
+
+                    m_shader->setVec3(
+                        "blockColor",
+                        material.baseColor
+                    );
+                }
+
+                for (const BlockMaterialRange& range :
+                    material.ranges)
+                {
+                    brickAsset->mesh->RenderMBXRange(
+                        range.startIndex,
+                        range.indexCount
+                    );
+                }
+            }
+        }
     }
 
 	// --------------------------------------------
@@ -249,11 +342,16 @@ void Render::RenderGrassBlock(const glm::mat4& model)
             );
         }
 
+        for (const BlockMaterialRange& range :
+            material.ranges)
+        {
+            asset->mesh->RenderMBXRange(
+                range.startIndex,
+                range.indexCount
+            );
+        }
 
-        asset->mesh->RenderMBXRange(
-            material.startIndex,
-            material.indexCount
-        );
+       
     }
         
 }

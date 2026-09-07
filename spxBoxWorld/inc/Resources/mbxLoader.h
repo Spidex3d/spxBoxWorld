@@ -45,6 +45,9 @@ struct MBXModel
 {
     std::string name;
 
+    // Scale saved by BoxEditor
+    glm::vec3 scale = glm::vec3(1.0f);
+
     std::vector<MBXVertex> vertices;
     std::vector<MBXTriangle> triangles;
     std::vector<MBXMaterial> materials;

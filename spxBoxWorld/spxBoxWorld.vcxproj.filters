@@ -107,6 +107,12 @@
     <ClInclude Include="inc\Resources\blockAssetManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\World\buildMode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\World\placeBricks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Shader\basic.vert" />

@@ -106,49 +106,64 @@ bool BlockAssetManager::LoadBlockAsset(BlockType type, const std::string& mbxFil
         // ----------------------------------------
         // Find triangles using this material
         // ----------------------------------------
-        int firstTriangle = -1;
-        unsigned int triangleCount = 0;
+        
+        int rangeStart = -1;
+        unsigned int rangeTriangleCount = 0;
 
         for (size_t triangleIndex = 0;
-            triangleIndex <
-            asset->model->triangles.size();
+            triangleIndex < asset->model->triangles.size();
             ++triangleIndex)
         {
             const MBXTriangle& triangle =
-                asset->model->triangles[
-                    triangleIndex
-                ];
+                asset->model->triangles[triangleIndex];
 
-            if (triangle.materialIndex ==
-                static_cast<int>(materialIndex))
+            bool usesMaterial =
+                triangle.materialIndex ==
+                static_cast<int>(materialIndex);
+
+            if (usesMaterial)
             {
-                if (firstTriangle == -1)
+                if (rangeStart == -1)
                 {
-                    firstTriangle =
-                        static_cast<int>(
-                            triangleIndex
-                            );
+                    rangeStart =
+                        static_cast<int>(triangleIndex);
+
+                    rangeTriangleCount = 0;
                 }
 
-                ++triangleCount;
+                ++rangeTriangleCount;
+            }
+
+            // End of a continuous material range
+            if ((!usesMaterial ||
+                triangleIndex ==
+                asset->model->triangles.size() - 1)
+                && rangeStart != -1)
+            {
+                BlockMaterialRange range;
+
+                range.startIndex =
+                    static_cast<unsigned int>(
+                        rangeStart
+                        ) * 3;
+
+                range.indexCount =
+                    rangeTriangleCount * 3;
+
+                blockMaterial.ranges.push_back(
+                    range
+                );
+
+                rangeStart = -1;
+                rangeTriangleCount = 0;
             }
         }
 
-
-        // Material isn't used by any face
-        if (firstTriangle == -1)
+        if (blockMaterial.ranges.empty())
         {
             continue;
         }
 
-
-        blockMaterial.startIndex =
-            static_cast<unsigned int>(
-                firstTriangle
-                ) * 3;
-
-        blockMaterial.indexCount =
-            triangleCount * 3;
 
 
         // ----------------------------------------

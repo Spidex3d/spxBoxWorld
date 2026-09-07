@@ -1,7 +1,8 @@
 #pragma once
 #include <memory>
 #include <glm/glm.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
+#include <vector>
+#include <World/placeBricks.h>	
 
 class Shader;
 class Mesh;
@@ -18,7 +19,8 @@ class Render
 		Render();
 		~Render();
 		bool Initialize();
-		void RenderFrame(const Camera& camera, const Block* selectedBlock);
+		//void RenderFrame(const Camera& camera, const Block* selectedBlock);
+		void RenderFrame(Camera& camera, Block* selectedBlock, const std::vector<PlacedBrick>& placedBricks);
 
 		void RenderGrassBlock(const glm::mat4& model);
 

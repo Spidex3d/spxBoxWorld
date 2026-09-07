@@ -7,14 +7,9 @@ enum class BlockType
     Ground,
     Grass,
     Dirt,
-    Stone
+    Stone,
+    Brick
 };
-
-//enum class BuildMode
-//{
-//    Block,
-//    Brick
-//};
 
 struct BlockDefinition
 {
