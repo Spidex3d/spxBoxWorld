@@ -9,7 +9,7 @@ class Camera;
 class World;
 class Block;
 class Texture;
-
+class BlockAssetManager;
 class MBXModel;
 
 class Render
@@ -35,16 +35,11 @@ private:
 	// Add any private members or methods needed for rendering
 	std::unique_ptr<Shader> m_shader;
 
-	std::unique_ptr<Mesh> m_mbxMesh;
 
 	std::unique_ptr<Mesh> m_cubeMesh;
 
 	std::unique_ptr<World> m_world;
 
-	// Keep loaded MBX data
-	std::unique_ptr<MBXModel> m_grassModel; 
-	
-	// Textures for the top and side of blocks
-	std::unique_ptr<Texture> m_topTexture;
-	std::unique_ptr<Texture> m_sideTexture;
+	std::unique_ptr<BlockAssetManager> m_blockAssets;
 };
+

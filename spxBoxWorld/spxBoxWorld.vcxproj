@@ -157,6 +157,7 @@
     <ClCompile Include="src\Graphics\stb_image.cpp" />
     <ClCompile Include="src\Graphics\texture.cpp" />
     <ClCompile Include="src\Helper\helpers.cpp" />
+    <ClCompile Include="src\Resources\blockAssetManager.cpp" />
     <ClCompile Include="src\Resources\mbxLoader.cpp" />
     <ClCompile Include="src\Scene\camera.cpp" />
     <ClCompile Include="src\World\blockRaycast.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="inc\Graphics\shader.h" />
     <ClInclude Include="inc\Graphics\texture.h" />
     <ClInclude Include="inc\Helper\helpers.h" />
+    <ClInclude Include="inc\Resources\blockAssetManager.h" />
     <ClInclude Include="inc\Resources\mbxLoader.h" />
     <ClInclude Include="inc\Scene\camera.h" />
     <ClInclude Include="inc\World\block.h" />

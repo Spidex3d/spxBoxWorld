@@ -1,5 +1,5 @@
 #pragma once
-#include <glm/vec3.hpp>
+#include <glm\glm.hpp>
 
 enum class BlockType
 {
@@ -9,6 +9,12 @@ enum class BlockType
     Dirt,
     Stone
 };
+
+//enum class BuildMode
+//{
+//    Block,
+//    Brick
+//};
 
 struct BlockDefinition
 {

@@ -80,6 +80,12 @@ void spxBoxWorld::Run()
 
         m_window->PollEvents();
 
+        /*Input::ProcessKeyboard(
+            m_window->GetNativeWindow(),
+            *m_camera,
+            deltaTime,
+            m_buildMode
+        );*/
         Input::ProcessKeyboard(
             m_window->GetNativeWindow(),
             *m_camera,
@@ -161,9 +167,10 @@ void spxBoxWorld::Run()
             int newY = hit.placePosition.y;
             int newZ = hit.placePosition.z;
 
+            // Stone
             bool added =
                 m_renderer->GetWorld()->AddBlock(
-                    BlockType::Stone,
+                    BlockType::Grass,
                     newX,
                     newY,
                     newZ
@@ -182,27 +189,6 @@ void spxBoxWorld::Run()
             }
         }
 
-       /* if (rightMouse &&
-            !lastRightMouse &&
-            hit.hit &&
-            hit.block)
-        {
-            int newX =
-                hit.block->x + hit.normal.x;
-
-            int newY =
-                hit.block->y + hit.normal.y;
-
-            int newZ =
-                hit.block->z + hit.normal.z;
-
-            m_renderer->GetWorld()->AddBlock(
-                BlockType::Stone,
-                newX,
-                newY,
-                newZ
-            );
-        }*/
 
         lastRightMouse = rightMouse;
 
@@ -240,115 +226,6 @@ void spxBoxWorld::Run()
     }
 }
 
-
-//void spxBoxWorld::Run()
-//{
-//    float lastFrame = 0.0f;
-//    bool lastLeftMouse = false;
-//    bool lastRightMouse = false;
-//
-//    while (!m_window->ShouldClose())
-//    {
-//        float currentFrame = static_cast<float>(glfwGetTime());
-//
-//        float deltaTime = currentFrame - lastFrame;
-//
-//        lastFrame = currentFrame;
-//
-//        m_window->PollEvents();
-//
-//        Input::ProcessKeyboard(m_window->GetNativeWindow(), *m_camera, deltaTime);
-//
-//        double mouseX;
-//        double mouseY;
-//
-//        glfwGetCursorPos(m_window->GetNativeWindow(), &mouseX,&mouseY);
-//
-//
-//        RaycastHit hit =
-//            BlockRaycast::CastFromMouse(
-//                *m_renderer->GetWorld(),
-//                *m_camera,
-//                mouseX,
-//                mouseY,
-//                1280,
-//                720
-//            );
-//
-//        Block* selectedBlock = hit.hit ? hit.block : nullptr;
-//
-//        static Block* lastSelected = nullptr;
-//       
-//
-//        m_renderer->RenderFrame(*m_camera, selectedBlock);
-//
-//        // #####
-//        bool leftMouse =
-//            glfwGetMouseButton(
-//                m_window->GetNativeWindow(),
-//                GLFW_MOUSE_BUTTON_LEFT
-//            ) == GLFW_PRESS;
-//
-//        if (leftMouse &&
-//            !lastLeftMouse &&
-//            hit.hit &&
-//            hit.block)
-//        {
-//            m_renderer->GetWorld()->RemoveBlock(hit.block->x, hit.block->y, hit.block->z);
-//        }
-//
-//        lastLeftMouse = leftMouse;
-//
-//        bool rightMouse =
-//            glfwGetMouseButton(
-//                m_window->GetNativeWindow(),
-//                GLFW_MOUSE_BUTTON_RIGHT
-//            ) == GLFW_PRESS;
-//
-//        if (rightMouse &&
-//            !lastRightMouse &&
-//            hit.hit &&
-//            hit.block)
-//        {
-//            int newX =
-//                hit.block->x + hit.normal.x;
-//
-//            int newY =
-//                hit.block->y + hit.normal.y;
-//
-//            int newZ =
-//                hit.block->z + hit.normal.z;
-//
-//            m_renderer->GetWorld()->AddBlock(BlockType::Stone, newX, newY, newZ);
-//        }
-//
-//        lastRightMouse = rightMouse;
-//
-//
-//       // #####
-//
-//        if (selectedBlock != lastSelected)
-//        {
-//            lastSelected = selectedBlock;
-//
-//            if (selectedBlock)
-//            {
-//                std::cout
-//                    << "Selected block: "
-//                    << selectedBlock->x << ", "
-//                    << selectedBlock->y << ", "
-//                    << selectedBlock->z
-//                    << std::endl;
-//            }
-//        }
-//        // Update game
-//                      
-//
-//        m_window->SwapBuffers();
-//    }
-//
-//	
-//}
 
 void spxBoxWorld::Shutdown()
 {
