@@ -12,6 +12,7 @@
 #include <World/blockRaycast.h>
 #include <World/world.h>
 #include <World/placeBricks.h>
+#include <World/brickRaycast.h>
 
 enum class BrickEdge
 {
@@ -27,6 +28,8 @@ struct BrickPlacementInfo
 
     int slotIndex = 0;
 
+    int layerIndex = 0;
+
     glm::vec3 position =
         glm::vec3(0.0f);
 
@@ -36,14 +39,38 @@ struct BrickPlacementInfo
         BrickDirection::AlongX;
 };
 
+static PlacedBrick* FindBrickUnderMouse(
+    std::vector<PlacedBrick>& placedBricks,
+    const RaycastHit& hit)
+{
+    PlacedBrick* closestBrick = nullptr;
+    float closestDistance = 0.20f;
+
+    for (PlacedBrick& brick : placedBricks)
+    {
+        float distance =
+            glm::distance(
+                brick.position,
+                hit.hitPosition
+            );
+
+        if (distance < closestDistance)
+        {
+            closestDistance = distance;
+            closestBrick = &brick;
+        }
+    }
+
+    return closestBrick;
+}
+
 spxBoxWorld::spxBoxWorld()
 {}
 
 spxBoxWorld::~spxBoxWorld()
 {}
 
-static BrickPlacementInfo GetBrickPlacementInfo(
-    const RaycastHit& hit)
+static BrickPlacementInfo GetBrickPlacementInfo(const RaycastHit& hit, int layerIndex)
 {
     BrickPlacementInfo info;
 
@@ -51,37 +78,28 @@ static BrickPlacementInfo GetBrickPlacementInfo(
     // Mouse hit position relative to block centre
     // ------------------------------------------------
 
-    float localX =
-        hit.hitPosition.x -
+    float localX = hit.hitPosition.x -
         static_cast<float>(hit.block->x);
 
-    float localZ =
-        hit.hitPosition.z -
+    float localZ = hit.hitPosition.z -
         static_cast<float>(hit.block->z);
-
 
     // ------------------------------------------------
     // Find nearest edge
     // ------------------------------------------------
 
-    float distLeft =
-        std::abs(localX + 0.5f);
+    float distLeft = std::abs(localX + 0.5f);
 
-    float distRight =
-        std::abs(0.5f - localX);
+    float distRight = std::abs(0.5f - localX);
 
-    float distBottom =
-        std::abs(localZ + 0.5f);
+    float distBottom = std::abs(localZ + 0.5f);
 
-    float distTop =
-        std::abs(0.5f - localZ);
+    float distTop = std::abs(0.5f - localZ);
 
 
-    info.edge =
-        BrickEdge::Top;
+    info.edge = BrickEdge::Top;
 
-    float nearestDistance =
-        distTop;
+    float nearestDistance = distTop;
 
 
     if (distBottom < nearestDistance)
@@ -110,6 +128,7 @@ static BrickPlacementInfo GetBrickPlacementInfo(
     if (info.edge == BrickEdge::Top ||
         info.edge == BrickEdge::Bottom)
     {
+        // X edges have 4 full brick slots
         float edgeX =
             localX + 0.5f;
 
@@ -117,9 +136,19 @@ static BrickPlacementInfo GetBrickPlacementInfo(
             static_cast<int>(
                 edgeX / 0.25f
                 );
+
+        info.slotIndex =
+            std::clamp(
+                info.slotIndex,
+                0,
+                3
+            );
     }
     else
     {
+        // Z edges have 3 full brick slots.
+        // The X-running bricks own both corners.
+
         float edgeZ =
             localZ + 0.5f;
 
@@ -127,26 +156,35 @@ static BrickPlacementInfo GetBrickPlacementInfo(
             static_cast<int>(
                 edgeZ / 0.25f
                 );
+
+        info.slotIndex =
+            std::clamp(
+                info.slotIndex,
+                0,
+                2
+            );
     }
 
-
-    info.slotIndex =
-        std::clamp(
-            info.slotIndex,
-            0,
-            3
-        );
 
 
     // ------------------------------------------------
     // Vertical position
     // ------------------------------------------------
 
+    constexpr float brickHeight = 0.125f;
+
+    // TEMP test:
+    // layer 0 = first row
+    // layer 1 = second row
+    info.layerIndex = layerIndex;
+
     info.position.y =
         static_cast<float>(hit.block->y)
         + 0.5f
-        + 0.0625f;
+        + (brickHeight * 0.5f)
+        + (info.layerIndex * brickHeight);
 
+   
 
     // ------------------------------------------------
     // Edge-specific position + rotation
@@ -154,12 +192,26 @@ static BrickPlacementInfo GetBrickPlacementInfo(
 
     if (info.edge == BrickEdge::Top)
     {
-        info.position.x =
-            static_cast<float>(hit.block->x)
-            - 0.5f
-            + 0.125f
-            + (info.slotIndex * 0.25f);
 
+        if (info.layerIndex % 2 == 0)
+        {
+            // Normal row
+            info.position.x =
+                static_cast<float>(hit.block->x)
+                - 0.5f
+                + 0.125f
+                + (info.slotIndex * 0.25f);
+        }
+        else
+        {
+            // Staggered row
+            info.position.x =
+                static_cast<float>(hit.block->x)
+                - 0.25f
+                + (info.slotIndex * 0.25f);
+        }
+
+       
         info.position.z =
             static_cast<float>(hit.block->z)
             + 0.5f
@@ -167,18 +219,31 @@ static BrickPlacementInfo GetBrickPlacementInfo(
 
         info.rotationY = 0.0f;
 
-        info.direction =
-            BrickDirection::AlongX;
+        info.direction = BrickDirection::AlongX;
     }
 
     else if (info.edge == BrickEdge::Bottom)
     {
-        info.position.x =
-            static_cast<float>(hit.block->x)
-            - 0.5f
-            + 0.125f
-            + (info.slotIndex * 0.25f);
+        // Stagger X position
+        if (info.layerIndex % 2 == 0)
+        {
+            // Normal row
+            info.position.x =
+                static_cast<float>(hit.block->x)
+                - 0.5f
+                + 0.125f
+                + (info.slotIndex * 0.25f);
+        }
+        else
+        {
+            // Staggered row
+            info.position.x =
+                static_cast<float>(hit.block->x)
+                - 0.25f
+                + (info.slotIndex * 0.25f);
+        }
 
+        // Keep Bottom edge Z position
         info.position.z =
             static_cast<float>(hit.block->z)
             - 0.5f
@@ -189,7 +254,6 @@ static BrickPlacementInfo GetBrickPlacementInfo(
         info.direction =
             BrickDirection::AlongX;
     }
-
     else if (info.edge == BrickEdge::Left)
     {
         info.position.x =
@@ -197,18 +261,29 @@ static BrickPlacementInfo GetBrickPlacementInfo(
             - 0.5f
             + 0.0625f;
 
-        info.position.z =
-            static_cast<float>(hit.block->z)
-            - 0.5f
-            + 0.125f
-            + (info.slotIndex * 0.25f);
+        if (info.layerIndex % 2 == 0)
+        {
+            // Normal row
+            info.position.z =
+                static_cast<float>(hit.block->z)
+                - 0.25f
+                + (info.slotIndex * 0.25f);
+        }
+        else
+        {
+            // Staggered row - move half a brick
+            info.position.z =
+                static_cast<float>(hit.block->z)
+                - 0.125f
+                + (info.slotIndex * 0.25f);
+        }
 
         info.rotationY = 90.0f;
 
         info.direction =
             BrickDirection::AlongZ;
     }
-
+    
     else if (info.edge == BrickEdge::Right)
     {
         info.position.x =
@@ -216,25 +291,31 @@ static BrickPlacementInfo GetBrickPlacementInfo(
             + 0.5f
             - 0.0625f;
 
-        info.position.z =
-            static_cast<float>(hit.block->z)
-            - 0.5f
-            + 0.125f
-            + (info.slotIndex * 0.25f);
+        if (info.layerIndex % 2 == 0)
+        {
+            // Normal row
+            info.position.z =
+                static_cast<float>(hit.block->z)
+                - 0.25f
+                + (info.slotIndex * 0.25f);
+        }
+        else
+        {
+            // Staggered row - move half a brick
+            info.position.z =
+                static_cast<float>(hit.block->z)
+                - 0.125f
+                + (info.slotIndex * 0.25f);
+        }
 
         info.rotationY = 90.0f;
 
         info.direction =
             BrickDirection::AlongZ;
-    }
-
-
+            }
+    
     return info;
 }
-
-
-
-
 
 bool spxBoxWorld::Initialize()
 {
@@ -278,6 +359,11 @@ void spxBoxWorld::Run()
 
     std::vector<PlacedBrick> placedBricks;
     BuildMode m_buildMode = BuildMode::Block;
+
+    PlacedBrick* selectedBrick = nullptr;
+
+    
+
 
     while (!m_window->ShouldClose())
     {
@@ -336,6 +422,83 @@ void spxBoxWorld::Run()
 
         Block* selectedBlock = hit.hit ? hit.block : nullptr;
 
+        PlacedBrick* selectedBrick = nullptr;
+
+        if (hit.hit)
+        {
+            selectedBrick = FindBrickUnderMouse(placedBricks, hit);
+        }
+
+        // -----------------------------------------------
+		// Temp: Output hit information
+        // -----------------------------------------------
+        static PlacedBrick* lastSelectedBrick =
+            nullptr;
+
+        if (selectedBrick != lastSelectedBrick)
+        {
+            lastSelectedBrick = selectedBrick;
+
+            if (selectedBrick)
+            {
+                std::cout
+                    << "Selected brick layer: "
+                    << selectedBrick->layerIndex
+                    << " position: "
+                    << selectedBrick->position.x << ", "
+                    << selectedBrick->position.y << ", "
+                    << selectedBrick->position.z
+                    << std::endl;
+            }
+        }
+
+		// -------------------------------------------------
+		// brick raycast temp test
+		// -------------------------------------------------
+        BrickRaycastHit brickHit =
+            BrickRaycast::CastFromMouse(
+                placedBricks,
+                *m_camera,
+                mouseX,
+                mouseY,
+                1280,
+                720
+            );
+
+        static PlacedBrick* lastBrickHit = nullptr;
+
+        if (m_buildMode == BuildMode::Brick &&
+            brickHit.hit &&
+            brickHit.brick)
+        {
+            selectedBrick =
+                brickHit.brick;
+        }
+        else
+        {
+            selectedBrick =
+                nullptr;
+        }
+
+
+
+        if (brickHit.brick != lastBrickHit)
+        {
+            lastBrickHit = brickHit.brick;
+
+            if (brickHit.hit && brickHit.brick)
+            {
+                std::cout
+                    << "Brick ray hit - layer "
+                    << brickHit.brick->layerIndex
+                    << " position: "
+                    << brickHit.brick->position.x << ", "
+                    << brickHit.brick->position.y << ", "
+                    << brickHit.brick->position.z
+                    << std::endl;
+            }
+        }
+
 
         // ------------------------------------------------
         // Remove block - Left Mouse
@@ -375,8 +538,11 @@ void spxBoxWorld::Run()
             {
                 if (hit.hit && hit.block)
                 {
+                    // Try layer 1 first
                     BrickPlacementInfo info =
-                        GetBrickPlacementInfo(hit);
+                        GetBrickPlacementInfo(hit, 1);
+
+                    int brickToRemove = -1;
 
                     for (int i = 0;
                         i < static_cast<int>(placedBricks.size());
@@ -387,30 +553,59 @@ void spxBoxWorld::Run()
                             info.position
                         ) < 0.001f)
                         {
-                            placedBricks.erase(
-                                placedBricks.begin() + i
-                            );
-
-                            std::cout
-                                << "Removed brick from slot "
-                                << info.slotIndex
-                                << std::endl;
-
+                            brickToRemove = i;
                             break;
                         }
                     }
+
+                    // If no layer 1 brick exists,
+                    // try layer 0
+                    if (brickToRemove == -1)
+                    {
+                        info =
+                            GetBrickPlacementInfo(hit, 0);
+
+                        for (int i = 0;
+                            i < static_cast<int>(placedBricks.size());
+                            ++i)
+                        {
+                            if (glm::distance(
+                                placedBricks[i].position,
+                                info.position
+                            ) < 0.001f)
+                            {
+                                brickToRemove = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (brickToRemove != -1)
+                    {
+                        placedBricks.erase(
+                            placedBricks.begin() +
+                            brickToRemove
+                        );
+
+                        std::cout
+                            << "Removed brick"
+                            << std::endl;
+                    }
                 }
             }
+
 
         }
 
         lastLeftMouse = leftMouse;
 
-        // ------------------------------------------------
-        // Add block / brick - Right Mouse
-        // ------------------------------------------------
+        
 
         // GLFW_MOUSE_BUTTON_RIGHT
+        // ------------------------------------------------
+        // Add block / brick - Left Mouse
+        // ------------------------------------------------
+
         bool rightMouse =
             glfwGetMouseButton(
                 m_window->GetNativeWindow(),
@@ -422,114 +617,338 @@ void spxBoxWorld::Run()
             hit.hit &&
             hit.block)
         {
+            // test
+
+            if (brickHit.hit && brickHit.brick)
+            {
+                int nextLayer = brickHit.brick->layerIndex + 1;
+
+                std::cout
+                    << "Clicked brick layer "
+                    << brickHit.brick->layerIndex
+                    << " -> next layer "
+                    << nextLayer
+                    << std::endl;
+
+                glm::vec3 nextBrickPos =
+                    brickHit.brick->position;
+
+                nextBrickPos.y += 0.125f;
+
+                // Stagger every new layer by half a brick
+                
+                
+                
+                if (brickHit.brick->direction ==
+                    BrickDirection::AlongX)
+                {
+                    nextBrickPos.x += 0.125f;
+                }
+                else if (brickHit.brick->direction ==
+                    BrickDirection::AlongZ)
+                {
+                    nextBrickPos.z += 0.125f;
+                }
+
+
+
+                std::cout
+                    << "Next brick position: "
+                    << nextBrickPos.x << ", "
+                    << nextBrickPos.y << ", "
+                    << nextBrickPos.z
+                    << std::endl;
+            }
+
             // ------------------------------------------------
             // Normal block placement
             // ------------------------------------------------
-       
-            BrickPlacementInfo info =
-                GetBrickPlacementInfo(hit);
 
-            PlacedBrick newBrick;
-
-            newBrick.position =
-                info.position;
-
-            newBrick.rotationY =
-                info.rotationY;
-
-            newBrick.direction =
-                info.direction;
-
-            newBrick.active = true;
-
-
-            // Prevent duplicate bricks
-            bool occupied = false;
-
-            for (const PlacedBrick& brick : placedBricks)
+            if (m_buildMode == BuildMode::Block)
             {
-                if (glm::distance(
-                    brick.position,
-                    info.position
-                ) < 0.001f)
+                int newX = hit.placePosition.x;
+                int newY = hit.placePosition.y;
+                int newZ = hit.placePosition.z;
+
+                bool added =
+                    m_renderer->GetWorld()->AddBlock(
+                        BlockType::Grass,
+                        newX,
+                        newY,
+                        newZ
+                    );
+
+                if (added)
                 {
-                    occupied = true;
-                    break;
+                    std::cout
+                        << "Added block: "
+                        << newX << ", "
+                        << newY << ", "
+                        << newZ
+                        << std::endl;
+
+                    selectedBlock = nullptr;
                 }
             }
 
+            // ------------------------------------------------
+            // Brick placement
+            // ------------------------------------------------
 
-            if (!occupied)
+            else if (m_buildMode == BuildMode::Brick)
             {
-                placedBricks.push_back(newBrick);
-            }
+                // ------------------------------------------------
+                // CASE 1:
+                // Mouse is pointing directly at an existing brick
+                // ------------------------------------------------
 
-
-            std::cout
-                << "Placed brick slot: "
-                << info.slotIndex
-                << std::endl;
-        }
-
-
-        // ------------------------------------------------
-        // ################ Brick placement ###############
-        // ------------------------------------------------
-        else if (m_buildMode == BuildMode::Brick)
-        {
-            // ------------------------------------------------
-            // Mouse hit position relative to block centre
-            // ------------------------------------------------
-
-            BrickPlacementInfo info = GetBrickPlacementInfo(hit);
-
-
-            PlacedBrick newBrick;
-
-            newBrick.position =
-                info.position;
-
-            newBrick.rotationY =
-                info.rotationY;
-
-            newBrick.direction =
-                info.direction;
-
-            newBrick.active = true;
-
-
-
-
-            // ------------------------------------------------
-            // Prevent duplicate bricks
-            // ------------------------------------------------
-
-            bool occupied = false;
-
-            for (const PlacedBrick& brick :
-                placedBricks)
-            {
-                if (glm::distance(
-                    brick.position,
-                    info.position
-                ) < 0.001f)
+                if (brickHit.hit && brickHit.brick)
                 {
-                    occupied = true;
-                    break;
+                    PlacedBrick& baseBrick =
+                        *brickHit.brick;
+
+                    int nextLayer =
+                        baseBrick.layerIndex + 1;
+
+                    glm::vec3 nextBrickPos =
+                        baseBrick.position;
+
+                    // Move up one brick height
+                    nextBrickPos.y += 0.125f;
+
+
+                    // ------------------------------------------------
+					// Stagger by half a brick both ways, depending on the layer index
+                    // ------------------------------------------------
+
+                    if (baseBrick.direction == BrickDirection::AlongX)
+                    {
+                        if (nextLayer % 2 == 0)
+                        {
+                            // Even layer:
+                            // move back to normal alignment
+                            nextBrickPos.x -= 0.125f;
+                        }
+                        else
+                        {
+                            // Odd layer:
+                            // half-brick stagger
+                            nextBrickPos.x += 0.125f;
+                        }
+                    }
+                    else
+                    {
+                        if (nextLayer % 2 == 0)
+                        {
+                            // Even layer:
+                            // move back to normal alignment
+                            nextBrickPos.z -= 0.125f;
+                        }
+                        else
+                        {
+                            // Odd layer:
+                            // half-brick stagger
+                            nextBrickPos.z += 0.125f;
+                        }
+                    }
+
+                    // ------------------------------------------------
+                    // Prevent duplicate brick
+                    // ------------------------------------------------
+
+                    bool occupied = false;
+
+                    for (const PlacedBrick& brick :
+                        placedBricks)
+                    {
+                        if (glm::distance(
+                            brick.position,
+                            nextBrickPos
+                        ) < 0.001f)
+                        {
+                            occupied = true;
+                            break;
+                        }
+                    }
+
+
+                    if (!occupied)
+                    {
+                        PlacedBrick newBrick;
+
+                        newBrick.position =
+                            nextBrickPos;
+
+                        newBrick.rotationY =
+                            baseBrick.rotationY;
+
+                        newBrick.direction =
+                            baseBrick.direction;
+                        
+                        //newBrick.type = baseBrick.type;
+
+                        /*newBrick.layerIndex =
+                            nextLayer;
+
+                        newBrick.active = true;
+
+                        placedBricks.push_back(
+                            newBrick
+                        );*/
+
+                        /*std::cout
+                            << "Placed brick on brick - layer "
+                            << nextLayer
+                            << std::endl;*/
+
+                        // ------------------------------------------------
+                        // Half-brick placement - Right Mouse
+                        // ------------------------------------------------
+                        // ------------------------------------------------
+                        // Full brick / Half brick
+                        // ------------------------------------------------
+
+                        bool ctrlPressed =
+                            glfwGetKey(
+                                m_window->GetNativeWindow(),
+                                GLFW_KEY_LEFT_CONTROL
+                            ) == GLFW_PRESS ||
+                            glfwGetKey(
+                                m_window->GetNativeWindow(),
+                                GLFW_KEY_RIGHT_CONTROL
+                            ) == GLFW_PRESS;
+
+
+                        if (ctrlPressed)
+                        {
+                            newBrick.type =
+                                BrickType::Half;
+                        }
+                        else
+                        {
+                            newBrick.type =
+                                BrickType::Full;
+                        }
+
+
+                        newBrick.layerIndex =
+                            nextLayer;
+
+                        newBrick.active = true;
+
+
+                        // Store brick AFTER type has been set
+                        placedBricks.push_back(newBrick);
+
+
+                        if (ctrlPressed)
+                        {
+                            std::cout
+                                << "Placed HALF brick - layer "
+                                << nextLayer
+                                << std::endl;
+                        }
+                        else
+                        {
+                            std::cout
+                                << "Placed FULL brick - layer "
+                                << nextLayer
+                                << std::endl;
+                        }
+
+                       
+                    }
+                }
+
+
+            
+                // ------------------------------------------------
+                // CASE 2:
+                // No brick hit - place first row from ground block
+                // ------------------------------------------------
+
+                else if (hit.hit &&
+                    hit.block &&
+                    hit.normal.y == 1)
+                {
+                    BrickPlacementInfo info =
+                        GetBrickPlacementInfo(
+                            hit,
+                            0
+                        );
+
+                    bool occupied = false;
+
+                    for (const PlacedBrick& brick :
+                        placedBricks)
+                    {
+                        if (glm::distance(
+                            brick.position,
+                            info.position
+                        ) < 0.001f)
+                        {
+                            occupied = true;
+                            break;
+                        }
+                    }
+
+
+                    if (!occupied)
+                    {
+                        PlacedBrick newBrick;
+
+                        newBrick.position =
+                            info.position;
+
+                        newBrick.rotationY =
+                            info.rotationY;
+
+                        newBrick.direction =
+                            info.direction;
+
+                        newBrick.layerIndex = 0;
+
+                        newBrick.active = true;
+
+
+                        bool ctrlPressed =
+                            glfwGetKey(
+                                m_window->GetNativeWindow(),
+                                GLFW_KEY_LEFT_CONTROL
+                            ) == GLFW_PRESS ||
+                            glfwGetKey(
+                                m_window->GetNativeWindow(),
+                                GLFW_KEY_RIGHT_CONTROL
+                            ) == GLFW_PRESS;
+
+                        newBrick.type =
+                            ctrlPressed
+                            ? BrickType::Half
+                            : BrickType::Full;
+
+
+                        placedBricks.push_back(newBrick);
+                        
+
+                        std::cout
+                            << "Placed ground brick - layer 0 slot "
+                            << info.slotIndex
+                            << std::endl;
+                    }
                 }
             }
 
-            if (!occupied)
-            {
-                placedBricks.push_back(newBrick);
-            }
-
-
-
         }
+		
 
+        
+
+
+
+
+
+        
         lastRightMouse = rightMouse;
-
 
         // ------------------------------------------------
         // Debug selection output
@@ -551,20 +970,25 @@ void spxBoxWorld::Run()
             }
         }
 
-
         // ------------------------------------------------
         // Render
         // ------------------------------------------------
         m_renderer->RenderFrame(
             *m_camera,
             selectedBlock,
-            placedBricks
+            placedBricks,
+            selectedBrick
         );
 
-        m_window->SwapBuffers();
-        }
-    }
+       /* m_renderer->RenderFrame(
+            *m_camera,
+            selectedBlock,
+            placedBricks
+        );*/
 
+        m_window->SwapBuffers();
+    }
+}
 
 void spxBoxWorld::Shutdown()
 {
@@ -582,40 +1006,3 @@ void spxBoxWorld::Shutdown()
 
     BOX_LOG_INFO("spxBoxWorld shutdown.");
 }
-
-
-
-
-//    glm::vec3 brickPos;
-
-               //   // brickPos.x = static_cast<float>(hit.block->x) + -edgeLength + brickDepth;
-               //    brickPos.x =
-               //        static_cast<float>(hit.block->x)
-               //        - 0.5f
-               //        + 0.125f
-               //        + 0.25f;
-
-               //    brickPos.y =
-               //        static_cast<float>(hit.block->y)
-               //        + edgeLength
-               //        + 0.0625f;
-
-               //    brickPos.z =
-               //        static_cast<float>(hit.block->z)
-               //        + 0.4375f;
-               //   
-               //    PlacedBrick newBrick;
-
-               //    newBrick.position = brickPos;
-               //    newBrick.rotationY = 0.0f;
-               //    newBrick.active = true;
-
-               //    placedBricks.push_back(newBrick);
-
-               //    std::cout
-               //        << "Placed brick at: "
-               //        << brickPos.x << ", "
-               //        << brickPos.y << ", "
-               //        << brickPos.z
-               //        << std::endl;
-               //}

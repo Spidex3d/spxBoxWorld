@@ -60,6 +60,9 @@
     <ClCompile Include="src\Resources\blockAssetManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\World\brickRaycast.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\Core\spxBoxWorld.h">
@@ -111,6 +114,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inc\World\placeBricks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\World\brickRaycast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

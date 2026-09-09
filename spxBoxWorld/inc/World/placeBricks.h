@@ -7,6 +7,11 @@ enum class BrickDirection
     AlongZ
 };
 
+enum class BrickType
+{
+    Full,
+    Half
+};
 
 struct PlacedBrick
 {
@@ -15,6 +20,10 @@ struct PlacedBrick
     float rotationY = 0.0f;
 
     BrickDirection direction = BrickDirection::AlongX;
+
+    BrickType type = BrickType::Full;
+
+    int layerIndex = 0;
 
     bool active = true;
 };

@@ -54,6 +54,9 @@ bool Render::Initialize()
 
         return false;
     }
+    // --------------------------------------------
+    // Full Brick Asset
+    // --------------------------------------------
 
     if (!m_blockAssets->LoadBlockAsset(
         BlockType::Brick,
@@ -61,6 +64,20 @@ bool Render::Initialize()
     {
         std::cout
             << "Failed to load Brick BlockAsset"
+            << std::endl;
+
+        return false;
+    }
+    // --------------------------------------------
+	// Half Brick Asset
+    // --------------------------------------------
+
+    if (!m_blockAssets->LoadBlockAsset(
+        BlockType::BrickHalf,
+        "Models/Brick_half.mbx"))
+    {
+        std::cout
+            << "Failed to load BrickHalf BlockAsset"
             << std::endl;
 
         return false;
@@ -99,7 +116,7 @@ bool Render::Initialize()
     return true;
 }
 
-void Render::RenderFrame(Camera& camera, Block* selectedBlock, const std::vector<PlacedBrick>& placedBricks )
+void Render::RenderFrame(Camera& camera, Block* selectedBlock, const std::vector<PlacedBrick>& placedBricks, PlacedBrick* selectedBrick)
 {
     glClearColor(0.12f, 0.15f, 0.18f, 1.0f);
 
@@ -172,87 +189,171 @@ void Render::RenderFrame(Camera& camera, Block* selectedBlock, const std::vector
 
     }
     // -------------------------------------------
-	// test render a single brick at (0, 0, 0)
+	//  render a  brick 
     // -------------------------------------------
-    
-    BlockAsset* brickAsset =
-        m_blockAssets->GetBlockAsset(
-            BlockType::Brick
-        );
-
-    if (brickAsset)
-    {
+  
         for (const PlacedBrick& brick : placedBricks)
         {
-            if (!brick.active)
-                continue;
-
-            glm::mat4 model =
-                glm::mat4(1.0f);
-
-            model = glm::translate(
-                model,
-                brick.position
-            );
-
-            model = glm::rotate(
-                model,
-                glm::radians(brick.rotationY),
-                glm::vec3(0.0f, 1.0f, 0.0f)
-            );
-
-            model = glm::scale(
-                model,
-                brickAsset->model->scale
-            );
-
-            m_shader->setMat4(
-                "model",
-                model
-            );
-
-            for (const BlockMaterial& material :
-                brickAsset->materials)
+            for (const PlacedBrick& brick : placedBricks)
             {
-                if (material.useTexture &&
-                    material.texture)
+                if (!brick.active)
+                    continue;
+
+                BlockAsset* brickAsset = nullptr;
+
+                if (brick.type == BrickType::Half)
                 {
-                    m_shader->SetUniformInt(
-                        "useTexture",
-                        1
-                    );
-
-                    material.texture->Bind(0);
-
-                    m_shader->SetUniformInt(
-                        "baseTexture",
-                        0
-                    );
+                    brickAsset =
+                        m_blockAssets->GetBlockAsset(
+                            BlockType::BrickHalf
+                        );
                 }
                 else
                 {
-                    m_shader->SetUniformInt(
-                        "useTexture",
-                        0
-                    );
-
-                    m_shader->setVec3(
-                        "blockColor",
-                        material.baseColor
-                    );
+                    brickAsset =
+                        m_blockAssets->GetBlockAsset(
+                            BlockType::Brick
+                        );
                 }
 
-                for (const BlockMaterialRange& range :
-                    material.ranges)
+                if (!brickAsset)
+                    continue;
+
+                glm::mat4 model =
+                    glm::mat4(1.0f);
+
+                model = glm::translate(
+                    model,
+                    brick.position
+                );
+
+                model = glm::rotate(
+                    model,
+                    glm::radians(brick.rotationY),
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+
+                model = glm::scale(
+                    model,
+                    brickAsset->model->scale
+                );
+
+                m_shader->setMat4(
+                    "model",
+                    model
+                );
+
+                for (const BlockMaterial& material :
+                    brickAsset->materials)
                 {
-                    brickAsset->mesh->RenderMBXRange(
-                        range.startIndex,
-                        range.indexCount
-                    );
+                    if (material.useTexture &&
+                        material.texture)
+                    {
+                        m_shader->SetUniformInt(
+                            "useTexture",
+                            1
+                        );
+
+                        material.texture->Bind(0);
+
+                        m_shader->SetUniformInt(
+                            "baseTexture",
+                            0
+                        );
+                    }
+                    else
+                    {
+                        m_shader->SetUniformInt(
+                            "useTexture",
+                            0
+                        );
+
+                        m_shader->setVec3(
+                            "blockColor",
+                            material.baseColor
+                        );
+                    }
+
+                    for (const BlockMaterialRange& range :
+                        material.ranges)
+                    {
+                        brickAsset->mesh->RenderMBXRange(
+                            range.startIndex,
+                            range.indexCount
+                        );
+                    }
                 }
             }
+
+
         }
+   
+
+    // --------------------------------------------
+    // Highlight selected brick
+    // --------------------------------------------
+
+    if (selectedBrick)
+    {
+        glm::mat4 model =
+            glm::mat4(1.0f);
+
+        model = glm::translate(
+            model,
+            selectedBrick->position
+        );
+
+        model = glm::rotate(
+            model,
+            glm::radians(
+                selectedBrick->rotationY
+            ),
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+
+        // Slightly larger than the brick
+        model = glm::scale(
+            model,
+            glm::vec3(
+                0.255f,
+                0.130f,
+                0.130f
+            )
+        );
+
+        m_shader->setMat4(
+            "model",
+            model
+        );
+
+        m_shader->SetUniformInt(
+            "useTexture",
+            0
+        );
+
+        m_shader->setVec3(
+            "blockColor",
+            glm::vec3(
+                1.0f,
+                1.0f,
+                0.0f
+            )
+        );
+
+        glPolygonMode(
+            GL_FRONT_AND_BACK,
+            GL_LINE
+        );
+
+        m_cubeMesh->RenderCube();
+
+        glPolygonMode(
+            GL_FRONT_AND_BACK,
+            GL_FILL
+        );
     }
+
+
 
 	// --------------------------------------------
 	// Highlight selected block

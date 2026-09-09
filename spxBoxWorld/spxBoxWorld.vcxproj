@@ -161,6 +161,7 @@
     <ClCompile Include="src\Resources\mbxLoader.cpp" />
     <ClCompile Include="src\Scene\camera.cpp" />
     <ClCompile Include="src\World\blockRaycast.cpp" />
+    <ClCompile Include="src\World\brickRaycast.cpp" />
     <ClCompile Include="src\World\world.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -178,6 +179,7 @@
     <ClInclude Include="inc\Scene\camera.h" />
     <ClInclude Include="inc\World\block.h" />
     <ClInclude Include="inc\World\blockRaycast.h" />
+    <ClInclude Include="inc\World\brickRaycast.h" />
     <ClInclude Include="inc\World\buildMode.h" />
     <ClInclude Include="inc\World\placeBricks.h" />
     <ClInclude Include="inc\World\world.h" />

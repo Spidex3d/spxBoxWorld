@@ -40,7 +40,7 @@ void Input::ProcessKeyboard(GLFWwindow* window, Camera& camera, float deltaTime)
         camera.ProcessKeyboard(DOWN, deltaTime);
     }
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
     {
         camera.ProcessKeyboard(UP, deltaTime);
     }

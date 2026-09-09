@@ -8,7 +8,8 @@ enum class BlockType
     Grass,
     Dirt,
     Stone,
-    Brick
+    Brick,
+	BrickHalf
 };
 
 struct BlockDefinition

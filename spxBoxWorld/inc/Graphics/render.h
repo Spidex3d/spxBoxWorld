@@ -20,7 +20,10 @@ class Render
 		~Render();
 		bool Initialize();
 		//void RenderFrame(const Camera& camera, const Block* selectedBlock);
-		void RenderFrame(Camera& camera, Block* selectedBlock, const std::vector<PlacedBrick>& placedBricks);
+		//void RenderFrame(Camera& camera, Block* selectedBlock, const std::vector<PlacedBrick>& placedBricks);
+
+		void RenderFrame(Camera& camera, Block* selectedBlock, const std::vector<PlacedBrick>& placedBricks,
+			PlacedBrick* selectedBrick);
 
 		void RenderGrassBlock(const glm::mat4& model);
 
