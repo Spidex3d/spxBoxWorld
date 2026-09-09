@@ -7,6 +7,7 @@
 #include <Scene/camera.h>
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 #include <boxLog.h>
 
 #include <World/blockRaycast.h>
@@ -531,69 +532,38 @@ void spxBoxWorld::Run()
             }
 
             // ---------------------------------------------
-            // Remove placed brick
+            // Remove Selected brick
             // ---------------------------------------------
 
             else if (m_buildMode == BuildMode::Brick)
             {
-                if (hit.hit && hit.block)
+                if (brickHit.hit &&
+                    brickHit.brick)
                 {
-                    // Try layer 1 first
-                    BrickPlacementInfo info =
-                        GetBrickPlacementInfo(hit, 1);
-
-                    int brickToRemove = -1;
-
                     for (int i = 0;
                         i < static_cast<int>(placedBricks.size());
                         ++i)
                     {
-                        if (glm::distance(
-                            placedBricks[i].position,
-                            info.position
-                        ) < 0.001f)
+                        // Is this the exact brick the raycast hit?
+                        if (&placedBricks[i] ==
+                            brickHit.brick)
                         {
-                            brickToRemove = i;
+                            std::cout
+                                << "Removed brick layer "
+                                << placedBricks[i].layerIndex
+                                << std::endl;
+
+                            placedBricks.erase(
+                                placedBricks.begin() + i
+                            );
+
+                            selectedBrick = nullptr;
+
                             break;
                         }
                     }
-
-                    // If no layer 1 brick exists,
-                    // try layer 0
-                    if (brickToRemove == -1)
-                    {
-                        info =
-                            GetBrickPlacementInfo(hit, 0);
-
-                        for (int i = 0;
-                            i < static_cast<int>(placedBricks.size());
-                            ++i)
-                        {
-                            if (glm::distance(
-                                placedBricks[i].position,
-                                info.position
-                            ) < 0.001f)
-                            {
-                                brickToRemove = i;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (brickToRemove != -1)
-                    {
-                        placedBricks.erase(
-                            placedBricks.begin() +
-                            brickToRemove
-                        );
-
-                        std::cout
-                            << "Removed brick"
-                            << std::endl;
-                    }
                 }
             }
-
 
         }
 
@@ -723,32 +693,42 @@ void spxBoxWorld::Run()
 
                     if (baseBrick.direction == BrickDirection::AlongX)
                     {
-                        if (nextLayer % 2 == 0)
+                        // ------------------------------------------------
+                        // Brick underneath is a HALF brick
+                        // ------------------------------------------------
+                        if (baseBrick.type == BrickType::Half)
                         {
-                            // Even layer:
-                            // move back to normal alignment
-                            nextBrickPos.x -= 0.125f;
+                            float blockCenterX =
+                                std::round(baseBrick.position.x);
+
+                            // Right-hand half brick
+                            if (baseBrick.position.x > blockCenterX)
+                            {
+                                nextBrickPos.x -= 0.0625f;
+                            }
+
+                            // Left-hand half brick
+                            else
+                            {
+                                nextBrickPos.x += 0.0625f;
+                            }
                         }
+
+                        // ------------------------------------------------
+                        // Brick underneath is a FULL brick
+                        // ------------------------------------------------
                         else
                         {
-                            // Odd layer:
-                            // half-brick stagger
-                            nextBrickPos.x += 0.125f;
-                        }
-                    }
-                    else
-                    {
-                        if (nextLayer % 2 == 0)
-                        {
-                            // Even layer:
-                            // move back to normal alignment
-                            nextBrickPos.z -= 0.125f;
-                        }
-                        else
-                        {
-                            // Odd layer:
-                            // half-brick stagger
-                            nextBrickPos.z += 0.125f;
+                            if (nextLayer % 2 == 0)
+                            {
+                                // Back to normal alignment
+                                nextBrickPos.x -= 0.125f;
+                            }
+                            else
+                            {
+                                // Staggered row
+                                nextBrickPos.x += 0.125f;
+                            }
                         }
                     }
 
@@ -785,21 +765,7 @@ void spxBoxWorld::Run()
                         newBrick.direction =
                             baseBrick.direction;
                         
-                        //newBrick.type = baseBrick.type;
-
-                        /*newBrick.layerIndex =
-                            nextLayer;
-
-                        newBrick.active = true;
-
-                        placedBricks.push_back(
-                            newBrick
-                        );*/
-
-                        /*std::cout
-                            << "Placed brick on brick - layer "
-                            << nextLayer
-                            << std::endl;*/
+                        
 
                         // ------------------------------------------------
                         // Half-brick placement - Right Mouse
@@ -807,7 +773,6 @@ void spxBoxWorld::Run()
                         // ------------------------------------------------
                         // Full brick / Half brick
                         // ------------------------------------------------
-
                         bool ctrlPressed =
                             glfwGetKey(
                                 m_window->GetNativeWindow(),
@@ -819,15 +784,45 @@ void spxBoxWorld::Run()
                             ) == GLFW_PRESS;
 
 
-                        if (ctrlPressed)
+                        // Default to full brick
+                        newBrick.type = BrickType::Full;
+
+
+                        // ------------------------------------------------
+                        // Half brick - AlongX
+                        // ------------------------------------------------
+
+                        if (ctrlPressed &&
+                            baseBrick.direction == BrickDirection::AlongX)
                         {
                             newBrick.type =
                                 BrickType::Half;
-                        }
-                        else
-                        {
-                            newBrick.type =
-                                BrickType::Full;
+
+                            // Find the centre of the original 1x1 ground block
+                            // from the brick itself - NOT from hit.block.
+                            float blockCenterX =
+                                std::round(baseBrick.position.x);
+
+                            bool placeRightEnd =
+                                brickHit.hitPosition.x >
+                                blockCenterX;
+
+                            if (placeRightEnd)
+                            {
+                                // Right-hand half brick
+                                newBrick.position.x =
+                                    blockCenterX
+                                    + 0.5f
+                                    - 0.0625f;
+                            }
+                            else
+                            {
+                                // Left-hand half brick
+                                newBrick.position.x =
+                                    blockCenterX
+                                    - 0.5f
+                                    + 0.0625f;
+                            }
                         }
 
 
@@ -837,8 +832,10 @@ void spxBoxWorld::Run()
                         newBrick.active = true;
 
 
-                        // Store brick AFTER type has been set
+                        // Store AFTER position and type are finished
                         placedBricks.push_back(newBrick);
+
+
 
 
                         if (ctrlPressed)

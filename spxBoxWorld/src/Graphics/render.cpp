@@ -189,7 +189,7 @@ void Render::RenderFrame(Camera& camera, Block* selectedBlock, const std::vector
 
     }
     // -------------------------------------------
-	//  render a  brick 
+	//  render the bricks full and half
     // -------------------------------------------
   
         for (const PlacedBrick& brick : placedBricks)
